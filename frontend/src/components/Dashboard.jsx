@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import Filters from './Filters'
 import ChartView from './ChartView'
 import { fetchVisualizationData } from '../services/api'
@@ -8,6 +8,7 @@ const Dashboard = () => {
   const [data, setData] = useState([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
+  const debounceTimer = useRef(null)
   
   const [filters, setFilters] = useState({
     measure: 'policies',
@@ -15,12 +16,20 @@ const Dashboard = () => {
     numberOfPeriods: 10
   })
 
-  const fetchData = async () => {
+  const fetchData = async (currentFilters) => {
     setLoading(true)
     setError(null)
     
     try {
-      const response = await fetchVisualizationData(filters)
+      // Ensure numberOfPeriods defaults to 10
+      const filtersToUse = {
+        ...currentFilters,
+        numberOfPeriods: currentFilters.numberOfPeriods && currentFilters.numberOfPeriods > 0 
+          ? currentFilters.numberOfPeriods 
+          : 10
+      }
+      
+      const response = await fetchVisualizationData(filtersToUse)
       setData(response.data)
     } catch (err) {
       setError(err.message || 'Failed to fetch data')
@@ -31,11 +40,35 @@ const Dashboard = () => {
   }
 
   useEffect(() => {
-    fetchData()
+    // Clear any existing timer
+    if (debounceTimer.current) {
+      clearTimeout(debounceTimer.current)
+    }
+    
+    // Debounce the API call to prevent rapid updates
+    debounceTimer.current = setTimeout(() => {
+      fetchData(filters)
+    }, 300) // 300ms debounce
+    
+    // Cleanup timer on unmount or filter change
+    return () => {
+      if (debounceTimer.current) {
+        clearTimeout(debounceTimer.current)
+      }
+    }
   }, [filters])
 
   const handleFilterChange = (newFilters) => {
-    setFilters(prev => ({ ...prev, ...newFilters }))
+    setFilters(prev => {
+      const updated = { ...prev, ...newFilters }
+      
+      // Ensure numberOfPeriods is always valid (default to 10)
+      if (!updated.numberOfPeriods || updated.numberOfPeriods <= 0) {
+        updated.numberOfPeriods = 10
+      }
+      
+      return updated
+    })
   }
 
   return (
@@ -55,7 +88,7 @@ const Dashboard = () => {
       {error && (
         <div className="error">
           <p>Error: {error}</p>
-          <button onClick={fetchData}>Retry</button>
+          <button onClick={() => fetchData(filters)}>Retry</button>
         </div>
       )}
       

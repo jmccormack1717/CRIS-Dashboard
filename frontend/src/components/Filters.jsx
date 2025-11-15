@@ -11,8 +11,24 @@ const Filters = ({ filters, onFilterChange }) => {
   }
 
   const handleNumberOfPeriodsChange = (e) => {
-    const value = e.target.value
-    onFilterChange({ numberOfPeriods: value ? parseInt(value) || null : null })
+    const value = e.target.value.trim()
+    
+    // If empty, default to 10
+    if (value === '' || value === null || value === undefined) {
+      onFilterChange({ numberOfPeriods: 10 })
+      return
+    }
+    
+    // Parse the value
+    const parsed = parseInt(value, 10)
+    
+    // If valid number and > 0, use it; otherwise default to 10
+    if (!isNaN(parsed) && parsed > 0) {
+      onFilterChange({ numberOfPeriods: parsed })
+    } else {
+      // Invalid input, reset to 10
+      onFilterChange({ numberOfPeriods: 10 })
+    }
   }
 
   return (
@@ -54,11 +70,18 @@ const Filters = ({ filters, onFilterChange }) => {
             id="numberOfPeriods"
             type="number"
             min="1"
-            placeholder={`e.g., 6 for latest 6 ${filters.period}s`}
-            value={filters.numberOfPeriods || ''}
+            placeholder={`Default: 10 (latest 10 ${filters.period}s)`}
+            value={filters.numberOfPeriods ?? 10}
             onChange={handleNumberOfPeriodsChange}
+            onBlur={(e) => {
+              // On blur, ensure value is valid or reset to 10
+              const value = e.target.value.trim()
+              if (value === '' || isNaN(parseInt(value, 10)) || parseInt(value, 10) <= 0) {
+                onFilterChange({ numberOfPeriods: 10 })
+              }
+            }}
           />
-          <small>Show latest N {filters.period}s (leave empty for all)</small>
+          <small>Show latest N {filters.period}s (default: 10)</small>
         </div>
       </div>
     </div>

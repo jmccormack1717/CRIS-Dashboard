@@ -54,7 +54,13 @@ class DataProcessor:
         else:
             print(f"    → SUM of field {self.measure_fields.get(measure, 'UNKNOWN')} per period")
         print(f"  Period: {period}")
-        print(f"  Number of periods: {number_of_periods if number_of_periods else 'All'}")
+        
+        # Default to 10 if not provided or invalid
+        if not number_of_periods or number_of_periods <= 0:
+            number_of_periods = 10
+            print(f"  Number of periods: Using default (10)")
+        else:
+            print(f"  Number of periods: {number_of_periods}")
         print("=" * 80)
         
         valid_measures = ["policies", "premium", "commission"]
@@ -69,9 +75,8 @@ class DataProcessor:
         # Format for frontend
         result = self._format_for_chart(grouped_data, period)
         
-        # If number_of_periods specified, return only the latest N periods
-        # This ensures we get the actual latest N periods that have data
-        if number_of_periods and number_of_periods > 0:
+        # Return only the latest N periods (always filter, default is 10)
+        if result and len(result) > 0:
             # Get the latest N periods from the sorted result
             result = result[-number_of_periods:]
             print(f"  Filtered to latest {number_of_periods} periods: {len(result)} data points")
