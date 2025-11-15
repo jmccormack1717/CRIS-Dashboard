@@ -12,10 +12,11 @@ const api = axios.create({
 export const fetchVisualizationData = async (filters) => {
   try {
     // Convert camelCase to snake_case for backend
+    // If numberOfPeriods is null/undefined/0, send null to show all data
     const requestBody = {
       measure: filters.measure,
       period: filters.period,
-      number_of_periods: filters.numberOfPeriods || null
+      number_of_periods: (filters.numberOfPeriods && filters.numberOfPeriods > 0) ? filters.numberOfPeriods : null
     }
     const response = await api.post('/api/data', requestBody)
     return response.data

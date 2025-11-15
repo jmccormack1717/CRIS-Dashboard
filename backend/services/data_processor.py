@@ -61,22 +61,22 @@ class DataProcessor:
         if measure not in valid_measures:
             raise ValueError(f"Invalid measure: {measure}. Must be one of {valid_measures}")
         
-        # Filter by latest N periods if specified
-        filtered_data = self._filter_by_latest_periods(raw_data, period, number_of_periods)
-        print(f"  After filtering: {len(filtered_data)} records")
-        
-        # Group by period
-        grouped_data = self._group_by_period(filtered_data, period, measure)
+        # Group by period first (don't filter by date yet)
+        grouped_data = self._group_by_period(raw_data, period, measure)
         print(f"  After grouping: {len(grouped_data)} groups")
         print(f"  Grouped data: {json.dumps(grouped_data, indent=2)}")
         
-        # Format for frontend and filter to latest N periods
+        # Format for frontend
         result = self._format_for_chart(grouped_data, period)
         
         # If number_of_periods specified, return only the latest N periods
+        # This ensures we get the actual latest N periods that have data
         if number_of_periods and number_of_periods > 0:
+            # Get the latest N periods from the sorted result
             result = result[-number_of_periods:]
             print(f"  Filtered to latest {number_of_periods} periods: {len(result)} data points")
+            if result:
+                print(f"  Period range: {result[0]['label']} to {result[-1]['label']}")
         
         print(f"  Final result: {len(result)} data points")
         if result:
@@ -94,38 +94,11 @@ class DataProcessor:
         """
         Filter data to show only the latest N periods
         
-        If number_of_periods is None or 0, returns all data
-        Otherwise calculates the cutoff date based on period type
+        NOTE: This method is kept for backwards compatibility but is no longer used.
+        Filtering now happens after grouping to ensure we get actual latest N periods.
         """
-        if not number_of_periods or number_of_periods <= 0:
-            return data
-        
-        # Calculate cutoff date based on period type and number of periods
-        now = datetime.now()
-        
-        if period == "month":
-            # Go back N months - approximate using days
-            # Average month = 30.44 days, but we'll use a simple calculation
-            cutoff_date = now - timedelta(days=number_of_periods * 30)
-        elif period == "quarter":
-            # Go back N quarters (3 months each = ~91 days)
-            cutoff_date = now - timedelta(days=number_of_periods * 91)
-        elif period == "year":
-            # Go back N years
-            cutoff_date = now - timedelta(days=number_of_periods * 365)
-        else:
-            # Default to months if unknown period type
-            cutoff_date = now - timedelta(days=number_of_periods * 30)
-        
-        print(f"  Filtering to latest {number_of_periods} {period}(s)")
-        print(f"  Cutoff date: {cutoff_date.strftime('%Y-%m-%d')}")
-        
-        filtered = [
-            item for item in data
-            if self._get_date_from_record(item) >= cutoff_date
-        ]
-        
-        return filtered
+        # This method is deprecated - filtering happens after grouping now
+        return data
     
     def _get_date_from_record(self, record: Dict[str, Any]) -> datetime:
         """Extract Effective Date from QuickBase record"""
@@ -290,13 +263,45 @@ class DataProcessor:
         # Sort by period key
         sorted_keys = sorted(grouped_data.keys())
         
+        # Filter out periods with zero values (optional - can remove if you want to show zeros)
+        # Also filter out future periods beyond current date to avoid showing only future dates
+        now = datetime.now()
+        filtered_keys = []
+        
+        for key in sorted_keys:
+            # Skip if value is 0 (optional - comment out if you want to show zeros)
+            # if grouped_data[key] == 0:
+            #     continue
+            
+            # For month periods, check if the period is in the future
+            if period == "month":
+                try:
+                    period_date = datetime.strptime(key, "%Y-%m")
+                    # Only include periods up to current month
+                    if period_date.year > now.year or (period_date.year == now.year and period_date.month > now.month):
+                        print(f"  Skipping future period: {key}")
+                        continue
+                except:
+                    pass
+            elif period == "year":
+                try:
+                    period_year = int(key)
+                    # Only include years up to current year
+                    if period_year > now.year:
+                        print(f"  Skipping future year: {key}")
+                        continue
+                except:
+                    pass
+            
+            filtered_keys.append(key)
+        
         return [
             {
                 "period": key,
                 "value": round(grouped_data[key], 2),
                 "label": self._format_period_label(key, period)
             }
-            for key in sorted_keys
+            for key in filtered_keys
         ]
     
     def _format_period_label(self, period_key: str, period: str) -> str:

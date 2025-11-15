@@ -40,7 +40,7 @@ data_processor = DataProcessor()
 class FilterRequest(BaseModel):
     measure: str  # policies, premium, commission
     period: str  # month, quarter, year
-    number_of_periods: Optional[int] = None  # Number of latest periods to show (e.g., 6 for latest 6 months)
+    number_of_periods: Optional[int] = None  # Number of latest periods to show (None = all data, default handled by frontend)
 
 @app.get("/")
 async def root():
