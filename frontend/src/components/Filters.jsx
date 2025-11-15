@@ -10,16 +10,9 @@ const Filters = ({ filters, onFilterChange }) => {
     onFilterChange({ period: e.target.value })
   }
 
-  const handleSinceTimeChange = (e) => {
-    onFilterChange({ sinceTime: e.target.value || null })
-  }
-
-  const handleStartDateChange = (e) => {
-    onFilterChange({ startDate: e.target.value || null })
-  }
-
-  const handleEndDateChange = (e) => {
-    onFilterChange({ endDate: e.target.value || null })
+  const handleNumberOfPeriodsChange = (e) => {
+    const value = e.target.value
+    onFilterChange({ numberOfPeriods: value ? parseInt(value) || null : null })
   }
 
   return (
@@ -56,35 +49,16 @@ const Filters = ({ filters, onFilterChange }) => {
         </div>
 
         <div className="filter-group">
-          <label htmlFor="sinceTime">Since Time</label>
+          <label htmlFor="numberOfPeriods">Number of Periods</label>
           <input
-            id="sinceTime"
-            type="text"
-            placeholder="e.g., 30days, 6months, 2024-01-01"
-            value={filters.sinceTime || ''}
-            onChange={handleSinceTimeChange}
+            id="numberOfPeriods"
+            type="number"
+            min="1"
+            placeholder={`e.g., 6 for latest 6 ${filters.period}s`}
+            value={filters.numberOfPeriods || ''}
+            onChange={handleNumberOfPeriodsChange}
           />
-          <small>Examples: 30days, 6months, 1year, 2024-01-01</small>
-        </div>
-
-        <div className="filter-group">
-          <label htmlFor="startDate">Start Date</label>
-          <input
-            id="startDate"
-            type="date"
-            value={filters.startDate || ''}
-            onChange={handleStartDateChange}
-          />
-        </div>
-
-        <div className="filter-group">
-          <label htmlFor="endDate">End Date</label>
-          <input
-            id="endDate"
-            type="date"
-            value={filters.endDate || ''}
-            onChange={handleEndDateChange}
-          />
+          <small>Show latest N {filters.period}s (leave empty for all)</small>
         </div>
       </div>
     </div>

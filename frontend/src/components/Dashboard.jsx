@@ -12,9 +12,7 @@ const Dashboard = () => {
   const [filters, setFilters] = useState({
     measure: 'policies',
     period: 'month',
-    startDate: null,
-    endDate: null,
-    sinceTime: null
+    numberOfPeriods: null
   })
 
   const fetchData = async () => {

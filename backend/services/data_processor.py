@@ -35,12 +35,15 @@ class DataProcessor:
         raw_data: List[Dict[str, Any]],
         measure: str,
         period: str,
-        start_date: Optional[str] = None,
-        end_date: Optional[str] = None,
-        since_time: Optional[str] = None
+        number_of_periods: Optional[int] = None
     ) -> List[Dict[str, Any]]:
         """
         Process raw QuickBase data into visualization format
+        
+        number_of_periods: Number of latest periods to show
+        - If period="month" and number_of_periods=6, shows latest 6 months
+        - If period="quarter" and number_of_periods=4, shows latest 4 quarters
+        - If period="year" and number_of_periods=5, shows latest 5 years
         """
         print("\n" + "=" * 80)
         print("DEBUG: DataProcessor.process_data()")
@@ -51,15 +54,15 @@ class DataProcessor:
         else:
             print(f"    → SUM of field {self.measure_fields.get(measure, 'UNKNOWN')} per period")
         print(f"  Period: {period}")
-        print(f"  Filters: start_date={start_date}, end_date={end_date}, since_time={since_time}")
+        print(f"  Number of periods: {number_of_periods if number_of_periods else 'All'}")
         print("=" * 80)
         
         valid_measures = ["policies", "premium", "commission"]
         if measure not in valid_measures:
             raise ValueError(f"Invalid measure: {measure}. Must be one of {valid_measures}")
         
-        # Parse dates and filter
-        filtered_data = self._filter_by_dates(raw_data, start_date, end_date, since_time)
+        # Filter by latest N periods if specified
+        filtered_data = self._filter_by_latest_periods(raw_data, period, number_of_periods)
         print(f"  After filtering: {len(filtered_data)} records")
         
         # Group by period
@@ -67,8 +70,14 @@ class DataProcessor:
         print(f"  After grouping: {len(grouped_data)} groups")
         print(f"  Grouped data: {json.dumps(grouped_data, indent=2)}")
         
-        # Format for frontend
+        # Format for frontend and filter to latest N periods
         result = self._format_for_chart(grouped_data, period)
+        
+        # If number_of_periods specified, return only the latest N periods
+        if number_of_periods and number_of_periods > 0:
+            result = result[-number_of_periods:]
+            print(f"  Filtered to latest {number_of_periods} periods: {len(result)} data points")
+        
         print(f"  Final result: {len(result)} data points")
         if result:
             print(f"  Sample result: {json.dumps(result[:3], indent=2)}")
@@ -76,63 +85,47 @@ class DataProcessor:
         
         return result
     
-    def _filter_by_dates(
+    def _filter_by_latest_periods(
         self,
         data: List[Dict[str, Any]],
-        start_date: Optional[str],
-        end_date: Optional[str],
-        since_time: Optional[str]
+        period: str,
+        number_of_periods: Optional[int]
     ) -> List[Dict[str, Any]]:
-        """Filter data based on date range or since_time"""
-        filtered = data
+        """
+        Filter data to show only the latest N periods
         
-        if since_time:
-            # Parse since_time (e.g., "2024-01-01" or "30days" or "6months")
-            cutoff_date = self._parse_since_time(since_time)
-            filtered = [
-                item for item in filtered
-                if self._get_date_from_record(item) >= cutoff_date
-            ]
+        If number_of_periods is None or 0, returns all data
+        Otherwise calculates the cutoff date based on period type
+        """
+        if not number_of_periods or number_of_periods <= 0:
+            return data
         
-        if start_date:
-            start = datetime.strptime(start_date, "%Y-%m-%d")
-            filtered = [
-                item for item in filtered
-                if self._get_date_from_record(item) >= start
-            ]
+        # Calculate cutoff date based on period type and number of periods
+        now = datetime.now()
         
-        if end_date:
-            end = datetime.strptime(end_date, "%Y-%m-%d")
-            filtered = [
-                item for item in filtered
-                if self._get_date_from_record(item) <= end
-            ]
+        if period == "month":
+            # Go back N months - approximate using days
+            # Average month = 30.44 days, but we'll use a simple calculation
+            cutoff_date = now - timedelta(days=number_of_periods * 30)
+        elif period == "quarter":
+            # Go back N quarters (3 months each = ~91 days)
+            cutoff_date = now - timedelta(days=number_of_periods * 91)
+        elif period == "year":
+            # Go back N years
+            cutoff_date = now - timedelta(days=number_of_periods * 365)
+        else:
+            # Default to months if unknown period type
+            cutoff_date = now - timedelta(days=number_of_periods * 30)
+        
+        print(f"  Filtering to latest {number_of_periods} {period}(s)")
+        print(f"  Cutoff date: {cutoff_date.strftime('%Y-%m-%d')}")
+        
+        filtered = [
+            item for item in data
+            if self._get_date_from_record(item) >= cutoff_date
+        ]
         
         return filtered
-    
-    def _parse_since_time(self, since_time: str) -> datetime:
-        """Parse since_time string into datetime"""
-        since_time = since_time.lower().strip()
-        
-        # Try direct date format
-        try:
-            return datetime.strptime(since_time, "%Y-%m-%d")
-        except ValueError:
-            pass
-        
-        # Try relative time formats
-        if "day" in since_time:
-            days = int(''.join(filter(str.isdigit, since_time)))
-            return datetime.now() - timedelta(days=days)
-        elif "month" in since_time:
-            months = int(''.join(filter(str.isdigit, since_time)))
-            return datetime.now() - timedelta(days=months * 30)
-        elif "year" in since_time:
-            years = int(''.join(filter(str.isdigit, since_time)))
-            return datetime.now() - timedelta(days=years * 365)
-        
-        # Default to 30 days
-        return datetime.now() - timedelta(days=30)
     
     def _get_date_from_record(self, record: Dict[str, Any]) -> datetime:
         """Extract Effective Date from QuickBase record"""

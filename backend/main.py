@@ -40,9 +40,7 @@ data_processor = DataProcessor()
 class FilterRequest(BaseModel):
     measure: str  # policies, premium, commission
     period: str  # month, quarter, year
-    start_date: Optional[str] = None
-    end_date: Optional[str] = None
-    since_time: Optional[str] = None  # Period since time
+    number_of_periods: Optional[int] = None  # Number of latest periods to show (e.g., 6 for latest 6 months)
 
 @app.get("/")
 async def root():
@@ -69,9 +67,7 @@ async def get_visualization_data(filter: FilterRequest):
             raw_data=raw_data,
             measure=filter.measure,
             period=filter.period,
-            start_date=filter.start_date,
-            end_date=filter.end_date,
-            since_time=filter.since_time
+            number_of_periods=filter.number_of_periods
         )
         
         print(f"\nDEBUG: Returning {len(processed_data)} processed data points")
@@ -152,11 +148,10 @@ async def debug_process(filter: FilterRequest):
     }
     
     # Process step by step
-    filtered_data = data_processor._filter_by_dates(
+    filtered_data = data_processor._filter_by_latest_periods(
         raw_data,
-        filter.start_date,
-        filter.end_date,
-        filter.since_time
+        filter.period,
+        filter.number_of_periods
     )
     
     # Show measure values for first few records
@@ -197,6 +192,7 @@ async def debug_process(filter: FilterRequest):
             "measure": filter.measure,
             "measure_field_id": data_processor.measure_fields.get(filter.measure) if filter.measure != "policies" else "COUNT",
             "period": filter.period,
+            "number_of_periods": filter.number_of_periods,
             "date_field_id": data_processor.date_field_id
         }
     }

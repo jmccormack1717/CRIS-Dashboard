@@ -11,7 +11,13 @@ const api = axios.create({
 
 export const fetchVisualizationData = async (filters) => {
   try {
-    const response = await api.post('/api/data', filters)
+    // Convert camelCase to snake_case for backend
+    const requestBody = {
+      measure: filters.measure,
+      period: filters.period,
+      number_of_periods: filters.numberOfPeriods || null
+    }
+    const response = await api.post('/api/data', requestBody)
     return response.data
   } catch (error) {
     console.error('API Error:', error)
