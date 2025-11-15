@@ -14,9 +14,20 @@ load_dotenv()
 app = FastAPI(title="CRIS Dashboard API")
 
 # CORS middleware for React frontend
+# Get frontend URL from environment variable, with fallback to localhost for development
+frontend_urls = [
+    "http://localhost:3000",
+    "http://localhost:5173",
+]
+if os.getenv("FRONTEND_URL"):
+    frontend_urls.append(os.getenv("FRONTEND_URL"))
+    # Also add with https if not already present
+    if not os.getenv("FRONTEND_URL").startswith("https"):
+        frontend_urls.append(os.getenv("FRONTEND_URL").replace("http://", "https://"))
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000", "http://localhost:5173"],
+    allow_origins=frontend_urls,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
