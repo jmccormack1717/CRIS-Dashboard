@@ -5,16 +5,29 @@ import json
 
 class DataProcessor:
     def __init__(self):
+        import os
+        
+        # Field IDs - match QuickBase client configuration
+        # Policies is COUNT of records (not a field)
+        # Premium = Field 13, Commission = Field 19
+        self.date_field_id = os.getenv("QUICKBASE_DATE_FIELD", "10")
+        self.premium_field_id = str(os.getenv("QUICKBASE_PREMIUM_FIELD", "13"))
+        self.commission_field_id = str(os.getenv("QUICKBASE_COMMISSION_FIELD", "19"))
+        
+        # Measure fields mapping
+        # Policies doesn't have a field ID - it's a count of records
         self.measure_fields = {
-            "policies": 6,  # Field ID for policies
-            "premium": 7,   # Field ID for premium
-            "commission": 8 # Field ID for commission
+            "premium": self.premium_field_id,
+            "commission": self.commission_field_id
         }
         
         print("\n" + "=" * 80)
         print("DEBUG: DataProcessor Initialized")
-        print(f"  Measure Field IDs: {self.measure_fields}")
-        print(f"  Date Field ID: 3")
+        print(f"  Each record = One Policy")
+        print(f"  Date Field ID: {self.date_field_id} (Effective Date)")
+        print(f"  Premium Field ID: {self.premium_field_id} (Premium value)")
+        print(f"  Commission Field ID: {self.commission_field_id} (Commission value)")
+        print(f"  Policies Measure: COUNT of records per period (no field ID needed)")
         print("=" * 80)
     
     def process_data(
@@ -31,14 +44,19 @@ class DataProcessor:
         """
         print("\n" + "=" * 80)
         print("DEBUG: DataProcessor.process_data()")
-        print(f"  Input: {len(raw_data)} raw records")
-        print(f"  Measure: {measure} (Field ID: {self.measure_fields.get(measure, 'UNKNOWN')})")
+        print(f"  Input: {len(raw_data)} raw records (policies)")
+        print(f"  Measure: {measure}")
+        if measure == "policies":
+            print(f"    → COUNT of records per period")
+        else:
+            print(f"    → SUM of field {self.measure_fields.get(measure, 'UNKNOWN')} per period")
         print(f"  Period: {period}")
         print(f"  Filters: start_date={start_date}, end_date={end_date}, since_time={since_time}")
         print("=" * 80)
         
-        if measure not in self.measure_fields:
-            raise ValueError(f"Invalid measure: {measure}. Must be one of {list(self.measure_fields.keys())}")
+        valid_measures = ["policies", "premium", "commission"]
+        if measure not in valid_measures:
+            raise ValueError(f"Invalid measure: {measure}. Must be one of {valid_measures}")
         
         # Parse dates and filter
         filtered_data = self._filter_by_dates(raw_data, start_date, end_date, since_time)
@@ -117,28 +135,52 @@ class DataProcessor:
         return datetime.now() - timedelta(days=30)
     
     def _get_date_from_record(self, record: Dict[str, Any]) -> datetime:
-        """Extract date from QuickBase record"""
-        date_field_id = "3"  # Adjust based on your schema
+        """Extract Effective Date from QuickBase record"""
+        date_field_id = self.date_field_id
         
         # Debug: Show what fields are available
         available_fields = list(record.keys())
-        if "3" not in available_fields:
-            print(f"  WARNING: Date field ID '3' not found in record. Available fields: {available_fields}")
+        if date_field_id not in available_fields:
+            print(f"  WARNING: Date field ID '{date_field_id}' not found in record. Available fields: {available_fields}")
         
         date_field_data = record.get(date_field_id, {})
-        date_str = date_field_data.get("value", "") if isinstance(date_field_data, dict) else str(date_field_data)
+        
+        # Handle both dict format {"value": X} and direct value
+        if isinstance(date_field_data, dict):
+            date_value = date_field_data.get("value", "")
+        else:
+            date_value = date_field_data
+        
+        # Convert to string for parsing
+        if isinstance(date_value, (int, float)):
+            # QuickBase date code (days since epoch) - convert to date
+            # QuickBase epoch is January 1, 1970
+            try:
+                # Convert days since 1970-01-01 to datetime
+                quickbase_epoch = datetime(1970, 1, 1)
+                days = int(date_value)
+                parsed_date = quickbase_epoch + timedelta(days=days)
+                print(f"    DEBUG: Extracted date from field '{date_field_id}'")
+                print(f"      QuickBase date code: {date_value} days")
+                print(f"      Converted to date: {parsed_date}")
+                return parsed_date
+            except (ValueError, TypeError) as e:
+                print(f"      ERROR converting QuickBase date code: {e}")
+                return datetime.now()
+        
+        date_str = str(date_value) if date_value else ""
         
         print(f"    DEBUG: Extracting date from field '{date_field_id}'")
         print(f"      Field data: {date_field_data}")
         print(f"      Date string: '{date_str}'")
         
-        if not date_str:
+        if not date_str or date_str == "None":
             print(f"      WARNING: Empty date string, using current date")
             return datetime.now()
         
         try:
             # Try various date formats
-            for fmt in ["%Y-%m-%d", "%Y-%m-%d %H:%M:%S", "%m/%d/%Y", "%Y-%m-%dT%H:%M:%S"]:
+            for fmt in ["%Y-%m-%d", "%Y-%m-%d %H:%M:%S", "%m/%d/%Y", "%Y-%m-%dT%H:%M:%S", "%Y-%m-%d %H:%M:%S.%f"]:
                 try:
                     parsed_date = datetime.strptime(date_str, fmt)
                     print(f"      Successfully parsed date: {parsed_date} (format: {fmt})")
@@ -154,7 +196,25 @@ class DataProcessor:
         return datetime.now()
     
     def _get_measure_value(self, record: Dict[str, Any], measure: str) -> float:
-        """Extract measure value from record"""
+        """
+        Extract measure value from record
+        
+        Each record is a policy with:
+        - Effective Date (field 10)
+        - Premium value (field 13)
+        - Commission value (field 19)
+        
+        For measures:
+        - Policies: COUNT of records (return 1.0 per record, will be summed)
+        - Premium: Get value from field 13
+        - Commission: Get value from field 19
+        """
+        # Policies is COUNT of records - return 1.0 for each record
+        # When summed in _group_by_period, this becomes the count
+        if measure == "policies":
+            return 1.0
+        
+        # For premium and commission, get from respective field
         field_id = str(self.measure_fields[measure])
         
         print(f"    DEBUG: Extracting measure '{measure}' from field ID '{field_id}'")
@@ -192,8 +252,20 @@ class DataProcessor:
         period: str,
         measure: str
     ) -> Dict[str, float]:
-        """Group data by time period and sum measure values"""
-        print(f"\n  DEBUG: Grouping {len(data)} records by {period}")
+        """
+        Group data by time period and sum measure values
+        
+        Each record is a policy. For each period:
+        - Policies: COUNT (sum of 1.0 per record)
+        - Premium: SUM of premium values
+        - Commission: SUM of commission values
+        """
+        print(f"\n  DEBUG: Grouping {len(data)} records (policies) by {period}")
+        if measure == "policies":
+            print(f"    Measure: Policies (COUNT of records per period)")
+        else:
+            print(f"    Measure: {measure} (SUM of values per period)")
+        
         grouped = defaultdict(float)
         
         for idx, record in enumerate(data):

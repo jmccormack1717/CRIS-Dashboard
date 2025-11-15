@@ -116,8 +116,16 @@ async def get_debug_config():
         "quickbase_api_token_set": bool(os.getenv("QUICKBASE_API_TOKEN")),
         "quickbase_api_token_preview": os.getenv("QUICKBASE_API_TOKEN", "")[:20] + "..." if os.getenv("QUICKBASE_API_TOKEN") else "NOT SET",
         "frontend_url": os.getenv("FRONTEND_URL", "NOT SET"),
+        "date_field_id": data_processor.date_field_id,
+        "premium_field_id": data_processor.premium_field_id,
+        "commission_field_id": data_processor.commission_field_id,
         "measure_fields": data_processor.measure_fields,
-        "date_field_id": "3"
+        "policies": "COUNT of records (no field ID)",
+        "status_filter": {
+            "field_id": quickbase_client.status_field_id,
+            "value": quickbase_client.status_value,
+            "where_clause": quickbase_client.where_clause
+        }
     }
 
 @app.get("/api/debug/raw")
@@ -187,9 +195,9 @@ async def debug_process(filter: FilterRequest):
         "final_data": final_data,
         "configuration": {
             "measure": filter.measure,
-            "measure_field_id": data_processor.measure_fields.get(filter.measure),
+            "measure_field_id": data_processor.measure_fields.get(filter.measure) if filter.measure != "policies" else "COUNT",
             "period": filter.period,
-            "date_field_id": "3"
+            "date_field_id": data_processor.date_field_id
         }
     }
 

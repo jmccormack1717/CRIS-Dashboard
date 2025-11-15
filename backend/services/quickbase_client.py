@@ -11,9 +11,41 @@ class QuickBaseClient:
         self.realm = os.getenv("QUICKBASE_REALM", "your-realm.quickbase.com")
         self.headers = {
             "QB-Realm-Hostname": self.realm,
+            "User-Agent": "PythonQuickbaseClient",
             "Authorization": f"QB-USER-TOKEN {self.api_token}",
             "Content-Type": "application/json"
         }
+        
+        # Field IDs - configurable via environment variables
+        # Default: Field 10 = Effective Date, Field 13 = Premium, Field 19 = Commission
+        date_field = os.getenv("QUICKBASE_DATE_FIELD", "10")
+        premium_field = os.getenv("QUICKBASE_PREMIUM_FIELD", "13")
+        commission_field = os.getenv("QUICKBASE_COMMISSION_FIELD", "19")
+        status_field = os.getenv("QUICKBASE_STATUS_FIELD", "23")
+        status_value = os.getenv("QUICKBASE_STATUS_VALUE", "Bound")
+        
+        # Parse comma-separated field IDs or single values
+        def parse_field_id(field_str):
+            try:
+                return int(field_str)
+            except ValueError:
+                return int(field_str.split(',')[0].strip())
+        
+        self.date_field_id = str(parse_field_id(date_field))
+        self.premium_field_id = str(parse_field_id(premium_field))
+        self.commission_field_id = str(parse_field_id(commission_field))
+        self.status_field_id = str(parse_field_id(status_field))
+        self.status_value = status_value
+        
+        # Build select list - always include date, premium, commission
+        self.select_fields = [
+            parse_field_id(date_field),
+            parse_field_id(premium_field),
+            parse_field_id(commission_field)
+        ]
+        
+        # Build where clause
+        self.where_clause = f"{{{self.status_field_id}.EX.'{self.status_value}'}}"
         
         # Debug logging
         print("=" * 80)
@@ -34,22 +66,26 @@ class QuickBaseClient:
         
         async with httpx.AsyncClient() as client:
             try:
-                # Example query - adjust table ID and fields based on your QuickBase setup
+                # Query structure for policies data
                 table_id = os.getenv("QUICKBASE_TABLE_ID", "your-table-id")
                 
                 query_url = f"{self.base_url}/records/query"
                 
-                # Basic query structure - modify based on your table schema
+                # Query: Each record is a policy
+                # Each policy has: Effective Date (field 10), Premium (field 13), Commission (field 19)
+                # Policies measure = COUNT of records (no field needed)
+                # Where clause filters for 'Bound' policies only
                 query_payload = {
                     "from": table_id,
-                    "select": [3, 6, 7, 8],  # Field IDs - adjust to match your schema
-                    # "where": "{}"  # Add filters if needed
+                    "select": self.select_fields,  # [10, 13, 19] - Effective Date, Premium, Commission
+                    "where": self.where_clause  # "{23.EX.'Bound'}" - Only Bound policies
                 }
                 
                 print(f"DEBUG: QuickBase Request Details")
                 print(f"  URL: {query_url}")
                 print(f"  Table ID: {table_id}")
-                print(f"  Field IDs: [3, 6, 7, 8]")
+                print(f"  Select Fields: {self.select_fields} (Date={self.date_field_id}, Premium={self.premium_field_id}, Commission={self.commission_field_id})")
+                print(f"  Where Clause: {self.where_clause} (Status={self.status_value})")
                 print(f"  Headers: {json.dumps({k: v if k != 'Authorization' else 'QB-USER-TOKEN ***' for k, v in self.headers.items()}, indent=2)}")
                 print(f"  Payload: {json.dumps(query_payload, indent=2)}")
                 
@@ -120,10 +156,9 @@ class QuickBaseClient:
         for i in range(100):
             date = base_date + timedelta(days=i * 3)
             mock_data.append({
-                "3": {"value": date.strftime("%Y-%m-%d")},  # Date field
-                "6": {"value": random.randint(1, 50)},  # Policies count
-                "7": {"value": random.randint(10000, 500000)},  # Premium amount
-                "8": {"value": random.randint(1000, 50000)}  # Commission amount
+                self.date_field_id: {"value": date.strftime("%Y-%m-%d")},  # Effective Date
+                self.premium_field_id: {"value": random.randint(10000, 500000)},  # Premium
+                self.commission_field_id: {"value": random.randint(1000, 50000)}  # Commission
             })
         
         return mock_data
