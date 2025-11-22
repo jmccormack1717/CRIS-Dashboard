@@ -264,7 +264,7 @@ class LLMChatRequest(BaseModel):
 @app.post("/api/llm/chat")
 async def llm_chat(request: LLMChatRequest):
     """
-    Chat with LLM about dashboard data
+    Chat with LLM about dashboard data with access to all-time data
     """
     print("\n" + "=" * 80)
     print("DEBUG: API /api/llm/chat endpoint called")
@@ -274,10 +274,29 @@ async def llm_chat(request: LLMChatRequest):
     print("=" * 80)
     
     try:
+        # Fetch all raw data to create all-time summary
+        print("\nDEBUG: Fetching all raw data for all-time summary...")
+        raw_data = await quickbase_client.fetch_data(include_inforce_fields=True)
+        
+        # Create all-time summary
+        all_time_summary = llm_service.create_all_time_summary(
+            raw_data=raw_data,
+            date_field_id=data_processor.date_field_id,
+            premium_field_id=data_processor.premium_field_id,
+            commission_field_id=data_processor.commission_field_id
+        )
+        
+        print(f"\nDEBUG: All-time summary created")
+        print(f"  Total Policies: {all_time_summary.get('total_policies', 0)}")
+        print(f"  Total Premium: ${all_time_summary.get('total_premium', 0):,.2f}")
+        print(f"  Total Commission: ${all_time_summary.get('total_commission', 0):,.2f}")
+        
+        # Ask LLM with all-time context
         response = await llm_service.ask_question(
             question=request.question,
             dashboard_state=request.dashboard_state,
-            conversation_history=request.conversation_history
+            conversation_history=request.conversation_history,
+            all_time_summary=all_time_summary
         )
         
         print(f"\nDEBUG: LLM Response generated (length: {len(response)} chars)")
