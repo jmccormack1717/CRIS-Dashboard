@@ -299,7 +299,11 @@ async def llm_chat(request: LLMChatRequest):
         print(f"  Total Commission: ${all_time_summary.get('total_commission', 0):,.2f}")
         
         print(f"\nDEBUG: Inforce summary created")
-        print(f"  Total Inforce Policies: {inforce_summary.get('total_inforce_policies', 0)}")
+        # Calculate total using same method as dashboard (sum of counts from grouped data)
+        policy_count_data = inforce_summary.get("metrics", {}).get("policy_count", [])
+        total_inforce_calculated = sum(item.get("count", 0) for item in policy_count_data)
+        print(f"  Total Inforce Policies (calculated from grouped data): {total_inforce_calculated}")
+        print(f"  Total Inforce Policies (from summary): {inforce_summary.get('total_inforce_policies', 0)}")
         print(f"  Total Premium (Inforce): ${inforce_summary.get('total_premium', 0):,.2f}")
         print(f"  Total Commission (Inforce): ${inforce_summary.get('total_commission', 0):,.2f}")
         

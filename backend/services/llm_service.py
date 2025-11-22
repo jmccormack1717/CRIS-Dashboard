@@ -111,13 +111,15 @@ class LLMService:
             }
         
         # Process all metric types
+        # IMPORTANT: Use the SAME processing method as the dashboard to ensure exact consistency
         policy_count_data = data_processor.process_inforce_by_line(inforce_policies, "policy_count")
         premium_data = data_processor.process_inforce_by_line(inforce_policies, "premium")
         commission_data = data_processor.process_inforce_by_line(inforce_policies, "commission")
         avg_premium_data = data_processor.process_inforce_by_line(inforce_policies, "avg_premium")
         
-        # Calculate totals
-        total_inforce_policies = len(inforce_policies)
+        # Calculate totals using the SAME method as the dashboard (sum counts from processed data)
+        # This ensures 100% consistency - dashboard sums item.count from grouped data, so should we
+        total_inforce_policies = sum(item.get("count", 0) for item in policy_count_data)
         total_premium = sum(item.get("value", 0) for item in premium_data)
         total_commission = sum(item.get("value", 0) for item in commission_data)
         
@@ -258,7 +260,13 @@ class LLMService:
             if inforce_summary:
                 context_parts.append("")
                 context_parts.append("=== COMPLETE INFORCE DATA SUMMARY ===")
-                context_parts.append(f"Total Inforce Policies: {inforce_summary.get('total_inforce_policies', 0):,}")
+                # CRITICAL: Calculate total using SAME method as dashboard (sum of counts from grouped data)
+                # This ensures 100% consistency - dashboard sums item.count from processed data
+                policy_count_data = inforce_summary.get("metrics", {}).get("policy_count", [])
+                total_inforce_from_data = sum(item.get("count", 0) for item in policy_count_data)
+                context_parts.append(f"Total Inforce Policies: {total_inforce_from_data:,}")
+                context_parts.append("CRITICAL: This total is calculated using the EXACT SAME method as the dashboard table.")
+                context_parts.append("It sums the 'count' field from the grouped data, ensuring 100% consistency with what's displayed.")
                 total_premium = inforce_summary.get('total_premium', 0)
                 total_commission = inforce_summary.get('total_commission', 0)
                 context_parts.append(f"Total Premium (Inforce): ${total_premium:,.6f} (raw value, no rounding)")
