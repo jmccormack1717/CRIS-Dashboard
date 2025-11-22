@@ -18,6 +18,16 @@ const LLMChat = ({ dashboardState }) => {
     scrollToBottom()
   }, [messages])
 
+  // Auto-resize textarea
+  useEffect(() => {
+    if (inputRef.current) {
+      inputRef.current.style.height = 'auto'
+      const scrollHeight = inputRef.current.scrollHeight
+      const maxHeight = 200 // Maximum height in pixels (roughly 8-9 lines)
+      inputRef.current.style.height = `${Math.min(scrollHeight, maxHeight)}px`
+    }
+  }, [input])
+
   const handleSend = async () => {
     if (!input.trim() || loading) return
 
@@ -159,23 +169,29 @@ const LLMChat = ({ dashboardState }) => {
       </div>
 
       <div className="llm-chat-input-container">
-        <textarea
-          ref={inputRef}
-          className="llm-chat-input"
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          onKeyPress={handleKeyPress}
-          placeholder="Ask about your data... (Press Enter to send)"
-          rows={1}
-          disabled={loading}
-        />
-        <button
-          className="llm-chat-send"
-          onClick={handleSend}
-          disabled={!input.trim() || loading}
-        >
-          Send
-        </button>
+        <div className="llm-chat-input-wrapper">
+          <textarea
+            ref={inputRef}
+            className="llm-chat-input"
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyPress={handleKeyPress}
+            placeholder="Ask about your data..."
+            rows={1}
+            disabled={loading}
+          />
+          <button
+            className={`llm-chat-send ${input.trim() && !loading ? 'llm-chat-send-active' : ''}`}
+            onClick={handleSend}
+            disabled={!input.trim() || loading}
+            title="Send message (Enter)"
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M22 2L11 13" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              <path d="M22 2L15 22L11 13L2 9L22 2Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+          </button>
+        </div>
       </div>
     </div>
   )

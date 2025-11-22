@@ -278,12 +278,13 @@ async def llm_chat(request: LLMChatRequest):
         print("\nDEBUG: Fetching all raw data for all-time summary...")
         raw_data = await quickbase_client.fetch_data(include_inforce_fields=True)
         
-        # Create all-time summary
+        # Create all-time summary with detailed breakdowns
         all_time_summary = llm_service.create_all_time_summary(
             raw_data=raw_data,
             date_field_id=data_processor.date_field_id,
             premium_field_id=data_processor.premium_field_id,
-            commission_field_id=data_processor.commission_field_id
+            commission_field_id=data_processor.commission_field_id,
+            data_processor=data_processor
         )
         
         print(f"\nDEBUG: All-time summary created")

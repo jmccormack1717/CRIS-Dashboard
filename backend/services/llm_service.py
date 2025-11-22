@@ -23,9 +23,9 @@ class LLMService:
     def is_available(self) -> bool:
         return self.client is not None
     
-    def create_all_time_summary(self, raw_data: List[Dict[str, Any]], date_field_id: str, premium_field_id: str, commission_field_id: str) -> Dict[str, Any]:
+    def create_all_time_summary(self, raw_data: List[Dict[str, Any]], date_field_id: str, premium_field_id: str, commission_field_id: str, data_processor) -> Dict[str, Any]:
         """
-        Create all-time summary statistics from raw data
+        Create all-time summary statistics from raw data, including detailed breakdowns
         """
         if not raw_data:
             return {}
@@ -34,59 +34,53 @@ class LLMService:
             "total_policies": len(raw_data),
             "total_premium": 0.0,
             "total_commission": 0.0,
-            "date_range": {"earliest": None, "latest": None}
+            "date_range": {"earliest": None, "latest": None},
+            "breakdowns": {
+                "monthly": {"policies": {}, "premium": {}, "commission": {}},
+                "quarterly": {"policies": {}, "premium": {}, "commission": {}},
+                "yearly": {"policies": {}, "premium": {}, "commission": {}}
+            }
         }
         
         dates = []
         
+        # Process all records to get totals and breakdowns
         for record in raw_data:
             # Get date
-            date_data = record.get(date_field_id, {})
-            if isinstance(date_data, dict):
-                date_value = date_data.get("value", "")
-            else:
-                date_value = date_data
-            
-            if date_value:
-                try:
-                    if isinstance(date_value, (int, float)):
-                        quickbase_epoch = datetime(1970, 1, 1)
-                        date = quickbase_epoch + timedelta(days=int(date_value))
-                    else:
-                        date_str = str(date_value)
-                        for fmt in ["%Y-%m-%d", "%Y-%m-%d %H:%M:%S", "%m/%d/%Y"]:
-                            try:
-                                date = datetime.strptime(date_str, fmt)
-                                break
-                            except ValueError:
-                                continue
-                        else:
-                            continue
-                    dates.append(date)
-                except:
-                    pass
+            date = data_processor._get_date_from_record(record)
+            if date:
+                dates.append(date)
             
             # Get premium
-            premium_data = record.get(premium_field_id, {})
-            if isinstance(premium_data, dict):
-                premium = premium_data.get("value", 0)
-            else:
-                premium = premium_data
-            try:
-                all_time["total_premium"] += float(premium or 0)
-            except:
-                pass
+            premium = data_processor._get_measure_value(record, "premium")
+            all_time["total_premium"] += premium
             
             # Get commission
-            commission_data = record.get(commission_field_id, {})
-            if isinstance(commission_data, dict):
-                commission = commission_data.get("value", 0)
-            else:
-                commission = commission_data
-            try:
-                all_time["total_commission"] += float(commission or 0)
-            except:
-                pass
+            commission = data_processor._get_measure_value(record, "commission")
+            all_time["total_commission"] += commission
+            
+            # Get policy count (1 per record)
+            policy_count = data_processor._get_measure_value(record, "policies")
+            
+            if date:
+                # Add to monthly breakdown
+                month_key = date.strftime("%Y-%m")
+                all_time["breakdowns"]["monthly"]["policies"][month_key] = all_time["breakdowns"]["monthly"]["policies"].get(month_key, 0) + policy_count
+                all_time["breakdowns"]["monthly"]["premium"][month_key] = all_time["breakdowns"]["monthly"]["premium"].get(month_key, 0) + premium
+                all_time["breakdowns"]["monthly"]["commission"][month_key] = all_time["breakdowns"]["monthly"]["commission"].get(month_key, 0) + commission
+                
+                # Add to quarterly breakdown
+                quarter = (date.month - 1) // 3 + 1
+                quarter_key = f"{date.year}-Q{quarter}"
+                all_time["breakdowns"]["quarterly"]["policies"][quarter_key] = all_time["breakdowns"]["quarterly"]["policies"].get(quarter_key, 0) + policy_count
+                all_time["breakdowns"]["quarterly"]["premium"][quarter_key] = all_time["breakdowns"]["quarterly"]["premium"].get(quarter_key, 0) + premium
+                all_time["breakdowns"]["quarterly"]["commission"][quarter_key] = all_time["breakdowns"]["quarterly"]["commission"].get(quarter_key, 0) + commission
+                
+                # Add to yearly breakdown
+                year_key = str(date.year)
+                all_time["breakdowns"]["yearly"]["policies"][year_key] = all_time["breakdowns"]["yearly"]["policies"].get(year_key, 0) + policy_count
+                all_time["breakdowns"]["yearly"]["premium"][year_key] = all_time["breakdowns"]["yearly"]["premium"].get(year_key, 0) + premium
+                all_time["breakdowns"]["yearly"]["commission"][year_key] = all_time["breakdowns"]["yearly"]["commission"].get(year_key, 0) + commission
         
         if dates:
             all_time["date_range"]["earliest"] = min(dates).strftime("%Y-%m-%d")
@@ -112,7 +106,47 @@ class LLMService:
                 context_parts.append(f"Date Range: {date_range['earliest']} to {date_range['latest']}")
             
             context_parts.append("")
-            context_parts.append("Note: You have access to ALL historical data, not just what's currently displayed.")
+            context_parts.append("=== DETAILED BREAKDOWNS ===")
+            context_parts.append("You have access to ALL historical data broken down by Month, Quarter, and Year.")
+            context_parts.append("")
+            
+            # Add quarterly breakdown for policies
+            quarterly_policies = all_time_summary.get('breakdowns', {}).get('quarterly', {}).get('policies', {})
+            if quarterly_policies:
+                context_parts.append("Quarterly Policy Count (All Time):")
+                sorted_quarters = sorted(quarterly_policies.items())
+                for quarter, count in sorted_quarters:
+                    context_parts.append(f"  {quarter}: {int(count):,}")
+                context_parts.append("")
+            
+            # Add yearly breakdown for policies
+            yearly_policies = all_time_summary.get('breakdowns', {}).get('yearly', {}).get('policies', {})
+            if yearly_policies:
+                context_parts.append("Yearly Policy Count (All Time):")
+                sorted_years = sorted(yearly_policies.items())
+                for year, count in sorted_years:
+                    context_parts.append(f"  {year}: {int(count):,}")
+                context_parts.append("")
+            
+            # Add quarterly premium breakdown
+            quarterly_premium = all_time_summary.get('breakdowns', {}).get('quarterly', {}).get('premium', {})
+            if quarterly_premium:
+                context_parts.append("Quarterly Premium (All Time):")
+                sorted_quarters = sorted(quarterly_premium.items())
+                for quarter, premium in sorted_quarters:
+                    context_parts.append(f"  {quarter}: ${premium:,.2f}")
+                context_parts.append("")
+            
+            # Add yearly premium breakdown
+            yearly_premium = all_time_summary.get('breakdowns', {}).get('yearly', {}).get('premium', {})
+            if yearly_premium:
+                context_parts.append("Yearly Premium (All Time):")
+                sorted_years = sorted(yearly_premium.items())
+                for year, premium in sorted_years:
+                    context_parts.append(f"  {year}: ${premium:,.2f}")
+                context_parts.append("")
+            
+            context_parts.append("Note: You also have monthly breakdowns available for detailed analysis.")
             context_parts.append("")
         
         # View type and filters
@@ -195,10 +229,13 @@ class LLMService:
         system_prompt = """You are a helpful assistant for an insurance dashboard. 
 You help users understand their insurance data including policies, premiums, commissions, and inforce metrics.
 
-IMPORTANT: You have access to ALL historical data, not just what's currently displayed in the dashboard.
-- You can answer questions about any time period (all-time, specific years, months, etc.)
-- When asked about "all-time" totals, use the all-time summary data provided
-- You can compare current view data to all-time data
+IMPORTANT: You have access to ALL historical data with detailed breakdowns, not just what's currently displayed in the dashboard.
+- You have quarterly, yearly, and monthly breakdowns for policies, premium, and commission
+- You can answer questions about any time period (all-time, specific years, quarters, months, etc.)
+- You can analyze trends, patterns, and comparisons across any time period
+- When asked about quarterly performance, use the quarterly breakdown data provided
+- When asked about yearly trends, use the yearly breakdown data provided
+- You can compare periods, identify best/worst performing quarters, years, etc.
 - Be specific about whether your answer refers to the current filtered view or all-time data
 
 Be concise, accurate, and helpful. Format numbers nicely (use commas, dollar signs where appropriate)."""
