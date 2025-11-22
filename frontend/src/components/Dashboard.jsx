@@ -164,6 +164,18 @@ const Dashboard = () => {
   }, [])
 
   const handleFilterChange = (newFilters) => {
+    // Invalidate any pending requests when changing filters
+    requestIdRef.current += 1
+    
+    // Clear existing timer to ensure fresh fetch
+    if (debounceTimer.current) {
+      clearTimeout(debounceTimer.current)
+      debounceTimer.current = null
+    }
+    
+    // Set loading immediately for smooth transition (will be managed by useEffect)
+    setLoading(true)
+    
     setFilters(prev => {
       const updated = { ...prev, ...newFilters }
       
@@ -190,10 +202,8 @@ const Dashboard = () => {
     setData([]) // Clear data when switching views
     setError(null) // Clear errors when switching views
     
-    // If switching to inforce view, immediately set loading to prevent showing "No data available"
-    if (newViewType === 'inforce-by-line') {
-      setLoading(true)
-    }
+    // Immediately set loading for smooth transition regardless of view type
+    setLoading(true)
     
     // Update view type - this will trigger useEffect which will handle the fetch
     setViewType(newViewType)
@@ -251,14 +261,36 @@ const Dashboard = () => {
             filters={filters} 
             onFilterChange={handleFilterChange}
             chartType={chartType}
-            onChartTypeChange={setChartType}
+            onChartTypeChange={(newChartType) => {
+              // Chart type change doesn't require data reload - just visualization change
+              setChartType(newChartType)
+            }}
+            loading={loading}
           />
           
           {loading && (
-            <>
-              <SkeletonFilters />
-              <SkeletonChart />
-            </>
+            <div style={{ 
+              padding: '2rem', 
+              textAlign: 'center',
+              minHeight: '400px',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              animation: 'fadeIn 0.3s ease-in'
+            }}>
+              <div className="spinner" style={{ 
+                width: '40px', 
+                height: '40px',
+                marginBottom: '1rem'
+              }}></div>
+              <p style={{ fontSize: '1.1rem', marginTop: '1rem', color: 'var(--text-primary)' }}>
+                Loading time-based metrics...
+              </p>
+              <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', marginTop: '0.5rem' }}>
+                Processing {filters.measure} data for {filters.numberOfPeriods || 10} {filters.period}(s)
+              </p>
+            </div>
           )}
           
           {error && (
@@ -266,18 +298,32 @@ const Dashboard = () => {
               <p>Error: {error}</p>
               <button onClick={() => {
                 requestIdRef.current += 1
+                setLoading(true)
                 fetchData(filters, requestIdRef.current)
               }}>Retry</button>
             </div>
           )}
           
-          {!loading && !error && (
+          {!loading && !error && data && data.length > 0 && (
             <ChartView 
               data={data} 
               measure={filters.measure}
               period={filters.period}
               chartType={chartType}
             />
+          )}
+          
+          {!loading && !error && (!data || data.length === 0) && (
+            <div className="no-data" style={{ 
+              padding: '2rem', 
+              textAlign: 'center',
+              minHeight: '200px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center'
+            }}>
+              <p>No data available for the selected filters</p>
+            </div>
           )}
         </div>
       ) : (
@@ -317,18 +363,19 @@ const Dashboard = () => {
               display: 'flex',
               flexDirection: 'column',
               alignItems: 'center',
-              justifyContent: 'center'
+              justifyContent: 'center',
+              animation: 'fadeIn 0.3s ease-in'
             }}>
               <div className="spinner" style={{ 
                 width: '40px', 
                 height: '40px',
                 marginBottom: '1rem'
               }}></div>
-              <p style={{ fontSize: '1.1rem', marginTop: '1rem' }}>
+              <p style={{ fontSize: '1.1rem', marginTop: '1rem', color: 'var(--text-primary)' }}>
                 Loading inforce data...
               </p>
               <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', marginTop: '0.5rem' }}>
-                Processing policies (this may take a few seconds)
+                Processing ~3960 policies (this may take a few seconds)
               </p>
             </div>
           )}

@@ -1,7 +1,7 @@
 import React from 'react'
 import './Filters.css'
 
-const Filters = ({ filters, onFilterChange, chartType, onChartTypeChange }) => {
+const Filters = ({ filters, onFilterChange, chartType, onChartTypeChange, loading = false }) => {
   const handleMeasureChange = (e) => {
     onFilterChange({ measure: e.target.value })
   }
@@ -65,6 +65,12 @@ const Filters = ({ filters, onFilterChange, chartType, onChartTypeChange }) => {
             id="measure" 
             value={filters.measure} 
             onChange={handleMeasureChange}
+            disabled={loading}
+            style={{
+              opacity: loading ? 0.6 : 1,
+              cursor: loading ? 'wait' : 'pointer',
+              transition: 'opacity 0.2s ease'
+            }}
           >
             <option value="policies">Policies</option>
             <option value="premium">Premium</option>
@@ -78,6 +84,12 @@ const Filters = ({ filters, onFilterChange, chartType, onChartTypeChange }) => {
             id="period" 
             value={filters.period} 
             onChange={handlePeriodChange}
+            disabled={loading}
+            style={{
+              opacity: loading ? 0.6 : 1,
+              cursor: loading ? 'wait' : 'pointer',
+              transition: 'opacity 0.2s ease'
+            }}
           >
             <option value="month">Month</option>
             <option value="quarter">Quarter</option>
@@ -95,6 +107,12 @@ const Filters = ({ filters, onFilterChange, chartType, onChartTypeChange }) => {
             onChange={handleNumberOfPeriodsChange}
             onBlur={handleNumberOfPeriodsBlur}
             inputMode="numeric"
+            disabled={loading}
+            style={{
+              opacity: loading ? 0.6 : 1,
+              cursor: loading ? 'not-allowed' : 'text',
+              transition: 'opacity 0.2s ease'
+            }}
           />
           <small>Show latest N {filters.period}s (default: 10)</small>
         </div>
@@ -106,6 +124,12 @@ const Filters = ({ filters, onFilterChange, chartType, onChartTypeChange }) => {
               id="chartType" 
               value={chartType} 
               onChange={handleChartTypeChange}
+              disabled={loading}
+              style={{
+                opacity: loading ? 0.6 : 1,
+                cursor: loading ? 'wait' : 'pointer',
+                transition: 'opacity 0.2s ease'
+              }}
             >
               <option value="bar">Bar Chart</option>
               <option value="line">Line Chart</option>
