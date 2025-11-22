@@ -266,7 +266,12 @@ class DataProcessor:
             return date.strftime("%Y-%m-%d")
     
     def _format_for_chart(self, grouped_data: Dict[str, float], period: str) -> List[Dict[str, Any]]:
-        """Format grouped data for chart visualization"""
+        """
+        Format grouped data for chart visualization
+        
+        IMPORTANT: No rounding - keeps raw float values to ensure exact match with LLM data.
+        Frontend will handle display formatting (toLocaleString/toFixed) for visual presentation only.
+        """
         # Sort by period key
         sorted_keys = sorted(grouped_data.keys())
         
@@ -276,7 +281,7 @@ class DataProcessor:
         return [
             {
                 "period": key,
-                "value": round(grouped_data[key], 2),
+                "value": grouped_data[key],  # NO ROUNDING - keep raw float for exact match with LLM
                 "label": self._format_period_label(key, period)
             }
             for key in sorted_keys
@@ -433,30 +438,30 @@ class DataProcessor:
                 result.append({
                     "line": line,
                     "count": count,
-                    "value": count,
-                    "percent": round(percent, 2)
+                    "value": count,  # NO ROUNDING - keep raw float
+                    "percent": round(percent, 2)  # Percent can be rounded for display
                 })
             elif metric_type == "premium":
                 percent = (premium / total_premium * 100) if total_premium > 0 else 0.0
                 result.append({
                     "line": line,
                     "count": count,
-                    "value": round(premium, 2),
-                    "percent": round(percent, 2)
+                    "value": premium,  # NO ROUNDING - keep raw float for exact match with LLM
+                    "percent": round(percent, 2)  # Percent can be rounded for display
                 })
             elif metric_type == "commission":
                 percent = (commission / total_commission * 100) if total_commission > 0 else 0.0
                 result.append({
                     "line": line,
                     "count": count,
-                    "value": round(commission, 2),
-                    "percent": round(percent, 2)
+                    "value": commission,  # NO ROUNDING - keep raw float for exact match with LLM
+                    "percent": round(percent, 2)  # Percent can be rounded for display
                 })
             elif metric_type == "avg_premium":
                 result.append({
                     "line": line,
                     "count": count,
-                    "value": round(avg_premium, 2),
+                    "value": avg_premium,  # NO ROUNDING - keep raw float for exact match with LLM
                     "label": line  # For chart display
                 })
         

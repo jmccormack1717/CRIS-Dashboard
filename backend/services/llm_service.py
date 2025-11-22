@@ -98,8 +98,11 @@ class LLMService:
         if all_time_summary:
             context_parts.append("=== ALL-TIME DATA SUMMARY ===")
             context_parts.append(f"Total Policies (All Time): {all_time_summary.get('total_policies', 0):,}")
-            context_parts.append(f"Total Premium (All Time): ${all_time_summary.get('total_premium', 0):,.2f}")
-            context_parts.append(f"Total Commission (All Time): ${all_time_summary.get('total_commission', 0):,.2f}")
+            # Use full precision for totals - no rounding to match chart exactly
+            total_premium = all_time_summary.get('total_premium', 0)
+            total_commission = all_time_summary.get('total_commission', 0)
+            context_parts.append(f"Total Premium (All Time): ${total_premium:,.6f} (raw value, no rounding)")
+            context_parts.append(f"Total Commission (All Time): ${total_commission:,.6f} (raw value, no rounding)")
             
             date_range = all_time_summary.get('date_range', {})
             if date_range.get('earliest') and date_range.get('latest'):
@@ -141,10 +144,14 @@ class LLMService:
                     "commission": monthly_commission
                 }
             }
-            context_parts.append(json.dumps(structured_data, indent=2))
+            # Serialize JSON with full precision (no rounding) to match chart exactly
+            # Serialize JSON with full precision - Python's json.dumps preserves float precision
+            context_parts.append(json.dumps(structured_data, indent=2, ensure_ascii=False))
             context_parts.append("")
-            context_parts.append("IMPORTANT: This data uses the EXACT same calculations as the dashboard graph.")
-            context_parts.append("All quarterly and yearly totals match what's displayed in the dashboard.")
+            context_parts.append("CRITICAL: This data uses the EXACT same calculations as the dashboard graph.")
+            context_parts.append("NO ROUNDING: All values are raw floats - no rounding applied anywhere.")
+            context_parts.append("The JSON above contains the exact same values the chart displays (chart formats for visual display only).")
+            context_parts.append("If you calculate totals/averages from this data, they will match the chart's calculations exactly.")
             context_parts.append("")
             
             # Add pre-calculated analytical insights
@@ -180,15 +187,15 @@ class LLMService:
                 avg = total / len(values) if values else 0
                 context_parts.append(f"\nCurrent View Summary:")
                 context_parts.append(f"- Data points: {len(data)}")
-                context_parts.append(f"- Total {measure} in view: {total:,.2f}")
-                context_parts.append(f"- Average per period: {avg:,.2f}")
+                context_parts.append(f"- Total {measure} in view: {total:,.6f} (raw value, no rounding)")
+                context_parts.append(f"- Average per period: {avg:,.6f} (raw value, no rounding)")
                 
-                # Show sample data
+                # Show sample data - use full precision to match chart exactly
                 context_parts.append(f"\nSample periods in view (latest 5):")
                 for item in data[-5:]:
                     label = item.get("label", "")
                     value = item.get("value", 0)
-                    context_parts.append(f"  {label}: {value:,.2f}")
+                    context_parts.append(f"  {label}: {value:,.6f} (raw value, matches chart exactly)")
         
         elif view_type == "inforce-by-line":
             metric_type = dashboard_state.get("metric_type", "policy_count")
@@ -360,7 +367,12 @@ class LLMService:
         system_prompt = """You are an advanced analytical assistant for an insurance dashboard. 
 Your role is to perform DEEP DATA ANALYSIS that goes beyond simple reporting and provides actionable business insights.
 
-CRITICAL: You have access to ALL historical data in structured JSON format. This data uses the EXACT same calculations as the dashboard graph, so all numbers match perfectly.
+CRITICAL DATA CONSISTENCY:
+- You have access to ALL historical data in structured JSON format
+- This data uses the EXACT same calculations as the dashboard graph - 100% identical
+- All values are RAW FLOATS with NO ROUNDING - they match the chart exactly
+- When you see "$11,632,815.00" in JSON, the chart displays the exact same "$11,632,815.00" (frontend formatting for display only)
+- Totals, averages, and all calculations match between chart and LLM responses
 
 ANALYTICAL CAPABILITIES:
 1. **Comparative Analysis**: Compare periods, identify trends, calculate growth rates, percentiles
@@ -374,8 +386,10 @@ ANALYTICAL CAPABILITIES:
 DATA FORMAT:
 - Data is provided in structured JSON format: quarterly, yearly, and monthly breakdowns
 - Each breakdown has: policies (count), premium ($), commission ($)
-- Example: quarterly.commission["2024-Q1"] = commission value for Q1 2024
-- This data is 100% accurate and matches the dashboard graph exactly
+- Example: quarterly.commission["2024-Q1"] = commission value for Q1 2024 (raw float, no rounding)
+- Values are RAW FLOATS - no rounding applied anywhere in calculations
+- This data is 100% identical to what the dashboard graph uses - same source, same calculations
+- If chart shows "$11,632,815", the JSON value is exactly 11632815.0 (frontend formats for display)
 
 ANALYSIS APPROACH:
 - When asked "What quarter do we historically do the best in?", parse the JSON data, find the highest values, rank all quarters
