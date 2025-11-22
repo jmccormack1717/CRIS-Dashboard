@@ -162,8 +162,20 @@
 [data-theme="light"] .view-selector button[style*="background-color"] {
   background-color: var(--color-primary) !important;
   color: white !important;
-  border-color: var(--color-primary-light) !important;
-  box-shadow: 0 2px 8px var(--shadow) !important;
+  border-color: var(--color-primary) !important;
+  box-shadow: 0 4px 12px var(--shadow) !important;
+}
+
+[data-theme="light"] .view-selector button {
+  border-color: var(--color-primary-light);
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+[data-theme="light"] .view-selector button:hover {
+  background-color: var(--bg-tertiary);
+  border-color: var(--color-primary);
+  color: var(--color-primary);
 }
 
 [data-view-transition] {
