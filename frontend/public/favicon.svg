@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <!-- Background Circle -->
+  <circle cx="32" cy="32" r="30" fill="#1e3a8a"/>
+  <circle cx="32" cy="32" r="30" fill="url(#gradient)" opacity="0.8"/>
+  
+  <!-- Gradient -->
+  <defs>
+    <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1e3a8a"/>
+      <stop offset="100%" stop-color="#3b82f6"/>
+    </linearGradient>
+  </defs>
+  
+  <!-- Chart Grid Lines -->
+  <line x1="14" y1="22" x2="50" y2="22" stroke="#60a5fa" stroke-width="1" opacity="0.4"/>
+  <line x1="14" y1="32" x2="50" y2="32" stroke="#60a5fa" stroke-width="1" opacity="0.4"/>
+  <line x1="14" y1="42" x2="50" y2="42" stroke="#60a5fa" stroke-width="1" opacity="0.4"/>
+  
+  <!-- Rising Chart Line -->
+  <path d="M 16 44 L 22 38 L 28 36 L 34 28 L 40 26 L 46 20" 
+        stroke="#ffffff" 
+        stroke-width="3" 
+        fill="none" 
+        stroke-linecap="round" 
+        stroke-linejoin="round"/>
+  
+  <!-- Data Points -->
+  <circle cx="16" cy="44" r="2.5" fill="#ffffff"/>
+  <circle cx="22" cy="38" r="2.5" fill="#ffffff"/>
+  <circle cx="28" cy="36" r="2.5" fill="#ffffff"/>
+  <circle cx="34" cy="28" r="2.5" fill="#ffffff"/>
+  <circle cx="40" cy="26" r="2.5" fill="#ffffff"/>
+  <circle cx="46" cy="20" r="2.5" fill="#ffffff"/>
+  
+  <!-- Bar Chart Below Line -->
+  <rect x="22" y="40" width="6" height="8" fill="#0ea5e9" rx="1" opacity="0.8"/>
+  <rect x="30" y="38" width="6" height="10" fill="#0ea5e9" rx="1" opacity="0.8"/>
+  <rect x="38" y="30" width="6" height="18" fill="#0ea5e9" rx="1" opacity="0.8"/>
+</svg>
