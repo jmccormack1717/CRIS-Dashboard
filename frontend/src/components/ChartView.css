@@ -86,6 +86,29 @@
   margin-top: 1rem;
 }
 
+/* Remove hover effects on chart elements */
+.chart-container :global(svg .recharts-bar-rectangle) {
+  opacity: 1 !important;
+  cursor: default !important;
+}
+
+.chart-container :global(svg .recharts-bar-rectangle:hover) {
+  opacity: 1 !important;
+  cursor: default !important;
+}
+
+.chart-container :global(svg .recharts-line-dot) {
+  opacity: 1 !important;
+}
+
+.chart-container :global(svg .recharts-active-dot) {
+  display: none !important;
+}
+
+.chart-container :global(svg .recharts-active-shape) {
+  display: none !important;
+}
+
 .no-data {
   text-align: center;
   padding: 4rem;

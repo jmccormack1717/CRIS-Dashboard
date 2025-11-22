@@ -36,12 +36,12 @@
 }
 
 [data-theme="light"] {
-  /* Light Mode - Clean Professional Theme */
-  --color-primary: #1e40af;
-  --color-primary-light: #3b82f6;
-  --color-primary-dark: #1e3a8a;
-  --color-secondary: #0284c7;
-  --color-accent: #60a5fa;
+  /* Light Mode - Clean Professional Theme with Softer Blues */
+  --color-primary: #5b8fb8;
+  --color-primary-light: #7ba7d3;
+  --color-primary-dark: #4a7ba5;
+  --color-secondary: #6ba3c9;
+  --color-accent: #8bb8d9;
   --color-success: #16a34a;
   --color-warning: #ea580c;
   --color-danger: #dc2626;

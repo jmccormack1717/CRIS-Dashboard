@@ -134,6 +134,8 @@ const InforceByLineView = ({ data, metricType }) => {
                         metricType === 'commission' ? 'Commission' :
                         'Average Premium'}
                   radius={[8, 8, 0, 0]}
+                  cursor="default"
+                  activeBar={false}
                 >
                   {data.map((entry, index) => (
                     <Cell key={`cell-${index}`} fill={NAVY_COLORS[index % NAVY_COLORS.length]} />

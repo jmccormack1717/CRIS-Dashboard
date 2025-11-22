@@ -106,7 +106,7 @@ const ChartView = ({ data, measure, period, chartType = 'bar' }) => {
                 stroke={NAVY_COLORS.accent} 
                 strokeWidth={3}
                 dot={{ fill: NAVY_COLORS.accent, r: 5 }}
-                activeDot={{ r: 7, fill: NAVY_COLORS.secondary }}
+                activeDot={false}
                 name={measure.charAt(0).toUpperCase() + measure.slice(1)}
               />
             </LineChart>
@@ -236,6 +236,8 @@ const ChartView = ({ data, measure, period, chartType = 'bar' }) => {
                 fill={NAVY_COLORS.secondary}
                 name={measure.charAt(0).toUpperCase() + measure.slice(1)}
                 radius={[8, 8, 0, 0]}
+                cursor="default"
+                activeBar={false}
               />
             </BarChart>
           </ResponsiveContainer>
@@ -278,6 +280,8 @@ const ChartView = ({ data, measure, period, chartType = 'bar' }) => {
                 fill={NAVY_COLORS.secondary}
                 name={measure.charAt(0).toUpperCase() + measure.slice(1)}
                 radius={[8, 8, 0, 0]}
+                cursor="default"
+                activeBar={false}
               >
                 {data.map((entry, index) => (
                   <Cell key={`cell-${index}`} fill={CHART_COLORS[index % CHART_COLORS.length]} />
