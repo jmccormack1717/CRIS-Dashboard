@@ -8,15 +8,17 @@ function App() {
   return (
     <ThemeProvider>
       <div className="App">
-        <header className="App-header">
-          <div className="header-content">
-            <div>
-              <h1>CRIS Dashboard</h1>
-              <p>Live Data Visualization</p>
-            </div>
-            <ThemeToggle />
+      <header className="App-header">
+        <div className="header-actions">
+          <ThemeToggle />
+        </div>
+        <div className="header-content">
+          <div className="header-title-section">
+            <h1>CRIS Dashboard</h1>
+            <p>Live Data Visualization</p>
           </div>
-        </header>
+        </div>
+      </header>
         <main>
           <Dashboard />
         </main>

@@ -37,11 +37,10 @@
 .theme-toggle:hover {
   background: rgba(255, 255, 255, 0.25);
   border-color: rgba(255, 255, 255, 0.4);
-  transform: scale(1.05);
 }
 
 .theme-toggle:active {
-  transform: scale(0.95);
+  opacity: 0.8;
 }
 
 [data-theme="dark"] .theme-toggle {
