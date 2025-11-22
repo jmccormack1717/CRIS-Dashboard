@@ -224,3 +224,10 @@
   }
 }
 
+/* Lighten tooltip for dark mode in Inforce view */
+:not([data-theme="light"]) .inforce-view .recharts-default-tooltip {
+  background-color: rgba(51, 65, 85, 0.98) !important;
+  border-color: rgba(59, 130, 246, 0.4) !important;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3) !important;
+}
+

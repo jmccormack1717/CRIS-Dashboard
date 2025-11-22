@@ -187,13 +187,17 @@ const InforceByLineView = ({ data, metricType, loading }) => {
                     }}
                     labelStyle={{ color: 'var(--color-accent)' }}
                     contentStyle={{ 
-                      backgroundColor: 'var(--bg-secondary)', 
-                      border: '1px solid var(--border-color)',
+                      backgroundColor: document.documentElement.getAttribute('data-theme') === 'light' 
+                        ? 'rgba(255, 255, 255, 0.98)' 
+                        : 'rgba(51, 65, 85, 0.98)', 
+                      border: '1px solid rgba(59, 130, 246, 0.3)',
                       borderRadius: '8px',
                       color: 'var(--text-primary)',
                       backdropFilter: 'blur(10px)',
                       WebkitBackdropFilter: 'blur(10px)',
-                      boxShadow: '0 4px 12px var(--shadow)'
+                      boxShadow: document.documentElement.getAttribute('data-theme') === 'light'
+                        ? '0 4px 12px rgba(0, 0, 0, 0.1)'
+                        : '0 4px 12px rgba(0, 0, 0, 0.3)'
                     }}
                     cursor={false}
                   />
