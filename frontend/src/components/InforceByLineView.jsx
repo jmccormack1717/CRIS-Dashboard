@@ -11,6 +11,7 @@ import {
   Cell
 } from 'recharts'
 import './ChartView.css'
+import './ChartHoverFix.css'
 
 // Sleek Navy Theme Colors
 const NAVY_COLORS = [
@@ -80,7 +81,12 @@ const InforceByLineView = ({ data, metricType }) => {
           <>
             {/* Bar Chart */}
             <ResponsiveContainer width="100%" height={400}>
-              <BarChart data={data} margin={{ top: 20, right: 30, left: 20, bottom: 100 }}>
+              <BarChart 
+                data={data} 
+                margin={{ top: 20, right: 30, left: 20, bottom: 100 }}
+                onMouseEnter={() => {}}
+                onMouseLeave={() => {}}
+              >
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis 
                   dataKey="line" 
@@ -121,6 +127,7 @@ const InforceByLineView = ({ data, metricType }) => {
                     backdropFilter: 'blur(10px)',
                     WebkitBackdropFilter: 'blur(10px)'
                   }}
+                  cursor={false}
                 />
                 <Legend 
                   wrapperStyle={{ 
@@ -135,7 +142,8 @@ const InforceByLineView = ({ data, metricType }) => {
                         'Average Premium'}
                   radius={[8, 8, 0, 0]}
                   cursor="default"
-                  activeBar={false}
+                  activeBar={null}
+                  isAnimationActive={false}
                 >
                   {data.map((entry, index) => (
                     <Cell key={`cell-${index}`} fill={NAVY_COLORS[index % NAVY_COLORS.length]} />

@@ -17,6 +17,7 @@ import {
   ResponsiveContainer
 } from 'recharts'
 import './ChartView.css'
+import './ChartHoverFix.css'
 
 // Sleek Navy Theme Colors
 const NAVY_COLORS = {
@@ -72,7 +73,7 @@ const ChartView = ({ data, measure, period, chartType = 'bar' }) => {
       case 'line':
         return (
           <ResponsiveContainer width="100%" height={400}>
-            <LineChart {...commonProps}>
+            <LineChart {...commonProps} onMouseEnter={() => {}} onMouseLeave={() => {}}>
               <CartesianGrid strokeDasharray="3 3" stroke="#1e3a8a" strokeOpacity={0.2} />
               <XAxis 
                 dataKey="label" 
@@ -96,6 +97,7 @@ const ChartView = ({ data, measure, period, chartType = 'bar' }) => {
                   color: '#e2e8f0'
                 }}
                 labelStyle={{ color: '#60a5fa' }}
+                cursor={false}
               />
               <Legend 
                 wrapperStyle={{ color: '#cbd5e1' }}
@@ -116,7 +118,7 @@ const ChartView = ({ data, measure, period, chartType = 'bar' }) => {
       case 'area':
         return (
           <ResponsiveContainer width="100%" height={400}>
-            <AreaChart {...commonProps}>
+            <AreaChart {...commonProps} onMouseEnter={() => {}} onMouseLeave={() => {}}>
               <defs>
                 <linearGradient id="colorValue" x1="0" y1="0" x2="0" y2="1">
                   <stop offset="5%" stopColor={NAVY_COLORS.secondary} stopOpacity={0.8}/>
@@ -146,6 +148,7 @@ const ChartView = ({ data, measure, period, chartType = 'bar' }) => {
                   color: '#e2e8f0'
                 }}
                 labelStyle={{ color: '#60a5fa' }}
+                cursor={false}
               />
               <Legend 
                 wrapperStyle={{ color: '#cbd5e1' }}
@@ -189,6 +192,7 @@ const ChartView = ({ data, measure, period, chartType = 'bar' }) => {
                   color: '#e2e8f0'
                 }}
                 labelStyle={{ color: '#60a5fa' }}
+                cursor={false}
               />
               <Legend 
                 wrapperStyle={{ color: '#cbd5e1' }}
@@ -202,7 +206,7 @@ const ChartView = ({ data, measure, period, chartType = 'bar' }) => {
         // In a real scenario, you might stack multiple measures
         return (
           <ResponsiveContainer width="100%" height={400}>
-            <BarChart {...commonProps}>
+            <BarChart {...commonProps} onMouseEnter={() => {}} onMouseLeave={() => {}}>
               <CartesianGrid strokeDasharray="3 3" stroke="#1e3a8a" strokeOpacity={0.2} />
               <XAxis 
                 dataKey="label" 
@@ -226,6 +230,7 @@ const ChartView = ({ data, measure, period, chartType = 'bar' }) => {
                   color: '#e2e8f0'
                 }}
                 labelStyle={{ color: '#60a5fa' }}
+                cursor={false}
               />
               <Legend 
                 wrapperStyle={{ color: '#cbd5e1' }}
@@ -237,7 +242,8 @@ const ChartView = ({ data, measure, period, chartType = 'bar' }) => {
                 name={measure.charAt(0).toUpperCase() + measure.slice(1)}
                 radius={[8, 8, 0, 0]}
                 cursor="default"
-                activeBar={false}
+                activeBar={null}
+                isAnimationActive={false}
               />
             </BarChart>
           </ResponsiveContainer>
@@ -247,7 +253,7 @@ const ChartView = ({ data, measure, period, chartType = 'bar' }) => {
       default:
         return (
           <ResponsiveContainer width="100%" height={400}>
-            <BarChart {...commonProps}>
+            <BarChart {...commonProps} onMouseEnter={() => {}} onMouseLeave={() => {}}>
               <CartesianGrid strokeDasharray="3 3" stroke="#1e3a8a" strokeOpacity={0.2} />
               <XAxis 
                 dataKey="label" 
@@ -271,6 +277,7 @@ const ChartView = ({ data, measure, period, chartType = 'bar' }) => {
                   color: '#e2e8f0'
                 }}
                 labelStyle={{ color: '#60a5fa' }}
+                cursor={false}
               />
               <Legend 
                 wrapperStyle={{ color: '#cbd5e1' }}
@@ -281,7 +288,10 @@ const ChartView = ({ data, measure, period, chartType = 'bar' }) => {
                 name={measure.charAt(0).toUpperCase() + measure.slice(1)}
                 radius={[8, 8, 0, 0]}
                 cursor="default"
-                activeBar={false}
+                activeBar={null}
+                isAnimationActive={false}
+                onMouseEnter={() => {}}
+                onMouseLeave={() => {}}
               >
                 {data.map((entry, index) => (
                   <Cell key={`cell-${index}`} fill={CHART_COLORS[index % CHART_COLORS.length]} />

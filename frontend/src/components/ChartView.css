@@ -86,27 +86,53 @@
   margin-top: 1rem;
 }
 
-/* Remove hover effects on chart elements */
-.chart-container :global(svg .recharts-bar-rectangle) {
+/* Remove all hover effects on chart elements - keep tooltip only */
+.chart-container :global(.recharts-bar-rectangle),
+.chart-container :global(.recharts-bar-rectangle:hover),
+.chart-container :global(.recharts-bar-rectangle:active) {
   opacity: 1 !important;
   cursor: default !important;
+  fill-opacity: 1 !important;
+  stroke-opacity: 1 !important;
 }
 
-.chart-container :global(svg .recharts-bar-rectangle:hover) {
-  opacity: 1 !important;
-  cursor: default !important;
-}
-
-.chart-container :global(svg .recharts-line-dot) {
-  opacity: 1 !important;
-}
-
-.chart-container :global(svg .recharts-active-dot) {
+.chart-container :global(.recharts-active-bar),
+.chart-container :global(.recharts-active-shape) {
   display: none !important;
+  opacity: 0 !important;
 }
 
-.chart-container :global(svg .recharts-active-shape) {
+.chart-container :global(.recharts-line-dot),
+.chart-container :global(.recharts-line-dot:hover) {
+  opacity: 1 !important;
+}
+
+.chart-container :global(.recharts-active-dot) {
   display: none !important;
+  opacity: 0 !important;
+}
+
+/* Remove hover overlay/background bars */
+.chart-container :global(svg .recharts-bar-rectangle[style*="opacity"]),
+.chart-container :global(svg .recharts-bar-rectangle:hover[style*="opacity"]) {
+  opacity: 1 !important;
+}
+
+/* Disable all hover state changes */
+.chart-container :global(.recharts-tooltip-wrapper) {
+  pointer-events: all;
+}
+
+.chart-container :global(.recharts-surface) {
+  pointer-events: auto;
+}
+
+.chart-container :global(.recharts-bar-rectangle) {
+  pointer-events: none;
+}
+
+.chart-container :global(.recharts-brush) {
+  pointer-events: none;
 }
 
 .no-data {

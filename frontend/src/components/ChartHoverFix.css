@@ -1,0 +1,66 @@
+/* Global fix to remove hover highlights on all Recharts components */
+/* Target all bar rectangles and remove any hover effects */
+.recharts-wrapper .recharts-bar-rectangle,
+.recharts-wrapper .recharts-bar-rectangle:hover,
+.recharts-wrapper .recharts-bar-rectangle:active,
+.recharts-wrapper .recharts-bar-rectangle:focus {
+  opacity: 1 !important;
+  fill-opacity: 1 !important;
+  stroke-opacity: 1 !important;
+  cursor: default !important;
+  filter: none !important;
+}
+
+/* Completely hide active bar overlays - this is the white/grey overlay */
+.recharts-wrapper .recharts-active-bar,
+.recharts-wrapper .recharts-active-bar:hover,
+.recharts-wrapper .recharts-active-shape,
+.recharts-wrapper .recharts-active-shape:hover {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+
+/* Remove any overlay elements */
+.recharts-wrapper g.recharts-active-bar,
+.recharts-wrapper path.recharts-active-bar,
+.recharts-wrapper rect.recharts-active-bar {
+  display: none !important;
+  opacity: 0 !important;
+  visibility: hidden !important;
+}
+
+/* Remove hover state styles on bars */
+.recharts-wrapper .recharts-bar:hover .recharts-bar-rectangle,
+.recharts-wrapper .recharts-bar-rectangle:hover {
+  opacity: 1 !important;
+  fill-opacity: 1 !important;
+  filter: none !important;
+}
+
+/* Keep tooltips but remove hover highlights */
+.recharts-wrapper .recharts-tooltip-wrapper {
+  pointer-events: all !important;
+}
+
+.recharts-wrapper .recharts-tooltip-cursor {
+  display: none !important;
+}
+
+/* Prevent hover state from triggering on bars */
+.recharts-wrapper .recharts-bar {
+  cursor: default !important;
+}
+
+.recharts-wrapper .recharts-bar:hover {
+  opacity: 1 !important;
+}
+
+/* Also target any nested elements */
+.recharts-wrapper svg .recharts-active-bar,
+.recharts-wrapper svg .recharts-active-shape {
+  display: none !important;
+  opacity: 0 !important;
+}
+
