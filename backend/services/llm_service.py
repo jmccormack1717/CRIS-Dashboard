@@ -141,6 +141,28 @@ class LLMService:
         """
         context_parts = []
         
+        # Add current date/time context for proper interpretation of data
+        today = datetime.now()
+        current_date = today.strftime("%Y-%m-%d")
+        current_year = today.year
+        current_month = today.month
+        current_quarter = (current_month - 1) // 3 + 1
+        
+        context_parts.append("=== CURRENT DATE AND TIME CONTEXT ===")
+        context_parts.append(f"Today's Date: {current_date}")
+        context_parts.append(f"Current Year: {current_year}")
+        context_parts.append(f"Current Month: {current_month} ({today.strftime('%B')})")
+        context_parts.append(f"Current Quarter: Q{current_quarter}")
+        context_parts.append("")
+        context_parts.append("CRITICAL: Use this date context to properly interpret data.")
+        context_parts.append(f"- Years before {current_year} are COMPLETE historical years")
+        context_parts.append(f"- The year {current_year} may be PARTIAL (data through {current_month}/{current_year})")
+        context_parts.append(f"- Years after {current_year} are FUTURE/INCOMPLETE and should not be used for trend analysis")
+        context_parts.append(f"- Low numbers in {current_year + 1} or later years do NOT indicate a decline - they're just incomplete")
+        context_parts.append(f"- When comparing years, only compare COMPLETE years (years before {current_year})")
+        context_parts.append(f"- For {current_year}, acknowledge it's partial and focus on completed periods (months/quarters)")
+        context_parts.append("")
+        
         # All-time summary first (if available)
         if all_time_summary:
             context_parts.append("=== ALL-TIME DATA SUMMARY ===")
@@ -154,6 +176,44 @@ class LLMService:
             date_range = all_time_summary.get('date_range', {})
             if date_range.get('earliest') and date_range.get('latest'):
                 context_parts.append(f"Date Range: {date_range['earliest']} to {date_range['latest']}")
+                
+                # Identify which years are complete vs partial
+                latest_date_str = date_range.get('latest')
+                if latest_date_str:
+                    try:
+                        latest_date = datetime.strptime(latest_date_str, "%Y-%m-%d")
+                        latest_year = latest_date.year
+                        latest_month = latest_date.month
+                        
+                        context_parts.append("")
+                        context_parts.append("YEAR COMPLETENESS ANALYSIS:")
+                        
+                        # Check yearly breakdown to identify complete vs partial years
+                        yearly_policies = all_time_summary.get('breakdowns', {}).get('yearly', {}).get('policies', {})
+                        if yearly_policies:
+                            context_parts.append("Year Status (based on current date and data availability):")
+                            for year_str in sorted(yearly_policies.keys(), key=int):
+                                year_int = int(year_str)
+                                if year_int < current_year:
+                                    context_parts.append(f"  {year_int}: COMPLETE (historical year, full year of data)")
+                                elif year_int == current_year:
+                                    # Check if year is complete based on current date
+                                    if current_month == 12 and latest_month >= 12:
+                                        context_parts.append(f"  {year_int}: COMPLETE (current year, data through {latest_month}/{latest_year})")
+                                    else:
+                                        context_parts.append(f"  {year_int}: PARTIAL (current year, data through {latest_month}/{latest_year} - NOT COMPLETE)")
+                                else:
+                                    context_parts.append(f"  {year_int}: FUTURE/INCOMPLETE (year after current date - DO NOT use for trend analysis, very low numbers are normal)")
+                        
+                        context_parts.append("")
+                        context_parts.append(f"CRITICAL INTERPRETATION GUIDANCE:")
+                        context_parts.append(f"- Only use COMPLETE years (years before {current_year}) for meaningful trend analysis and year-over-year comparisons")
+                        context_parts.append(f"- Year {current_year} is PARTIAL - only use completed months/quarters, acknowledge incompleteness when discussing")
+                        context_parts.append(f"- Years after {current_year} are FUTURE/INCOMPLETE - very low numbers there are NORMAL, not indicative of decline")
+                        context_parts.append(f"- When asked about trends 'over the years' or 'recent years', focus on COMPLETE years only")
+                        context_parts.append(f"- NEVER interpret low numbers in future years ({current_year + 1} and later) as a decline - explain they're incomplete")
+                    except (ValueError, AttributeError):
+                        pass
             
             context_parts.append("")
             context_parts.append("=== COMPLETE HISTORICAL DATA (STRUCTURED JSON) ===")
@@ -581,6 +641,20 @@ DATA ACCESS:
 - Use the inforce summary data to answer questions about current active policies by line
 - All inforce values match the dashboard exactly - same filtering and calculations
 
+CRITICAL DATE/TIME AWARENESS:
+- You are given the CURRENT DATE in the context - PAY CLOSE ATTENTION TO IT
+- The context explicitly tells you today's date, current year, current month, and current quarter
+- Use this information to distinguish between COMPLETE years and PARTIAL/INCOMPLETE years
+- Years before the current year are COMPLETE - use these for meaningful trend analysis
+- The current year may be PARTIAL - only completed months/quarters should be compared to previous years
+- Years after the current year are FUTURE/INCOMPLETE - they have very little data because the year hasn't started yet
+- NEVER interpret low numbers in future years (after current year) as a decline - it's just incomplete data
+- When analyzing trends, focus on COMPLETE years only (years before current year)
+- When asked about "recent years" or "over the years", exclude incomplete/future years from analysis
+- Always acknowledge in your response when discussing partial years that data is incomplete
+- When you see low numbers in a year that's after the current date, explain that the year hasn't started yet or is just beginning
+- For example, if current date is November 2025 and you see only 2 policies in 2026, explain that 2026 is a future/incomplete year and the low number is normal
+
 ANALYSIS APPROACH:
 Think through these questions internally, but only output the final answer:
 1. What data points do I need to examine? (Identify relevant JSON paths)
@@ -623,15 +697,21 @@ Remember: Only output the final natural narrative answer. Use the reasoning step
 
 EXAMPLE QUESTIONS YOU CAN ANSWER:
 - "What quarter do we historically do the best in?" → Analyze all quarters, find the best performers, explain in plain language
-- "Compare Q1 performance across all years" → Compare Q1 across years, explain trends naturally
+- "Compare Q1 performance across all years" → Compare Q1 across years, explain trends naturally (only use complete years)
 - "Is there a seasonal pattern?" → Identify patterns and explain them like you're in a business meeting
-- "What's our growth rate?" → Calculate and explain growth trends in business terms
-- "Which year had the best performance?" → Compare years and explain which performed best and why
+- "What's our growth rate?" → Calculate and explain growth trends in business terms (only compare complete years)
+- "Which year had the best performance?" → Compare years and explain which performed best and why (exclude future/incomplete years)
 - "How have inforce line policies been over the years?" → Use the inforce summary data to analyze current inforce policies by line
 - "Which line of business has the most inforce policies?" → Compare policy counts across lines from the inforce data
 - "What percentage of inforce premium comes from MPL?" → Use the premium by line data to calculate percentages
 - "How does inforce commission compare across lines?" → Use the commission by line data to compare and rank lines
-- "What's the average premium by line for inforce policies?" → Use the avg_premium data to compare averages across lines"""
+- "What's the average premium by line for inforce policies?" → Use the avg_premium data to compare averages across lines
+
+DATE AWARENESS EXAMPLES:
+- If asked about "trends in recent years" and current date is November 2025, focus on years 2024 and earlier (complete years)
+- If you see only 2 policies in 2026 and current date is November 2025, explain that 2026 is a future/incomplete year and low numbers are normal
+- When comparing year-over-year growth, only compare complete years (years before current year)
+- Acknowledge partial year data explicitly: "In 2025 (through November), we have..." rather than treating it as complete"""
         
         # Build messages
         messages = [
@@ -648,8 +728,13 @@ EXAMPLE QUESTIONS YOU CAN ANSWER:
         for msg in conversation_history[-10:]:  # Last 10 messages for context
             messages.append(msg)
         
-        # Enhance user question - guide reasoning but emphasize natural output
+        # Enhance user question - guide reasoning but emphasize natural output and date awareness
         enhanced_question = f"""{question}
+
+IMPORTANT: Check the CURRENT DATE context provided above. Remember that:
+- Years after the current date are incomplete/future years - do NOT interpret low numbers there as declines
+- Only compare COMPLETE years (years before current year) for meaningful trend analysis
+- If discussing the current year or future years, acknowledge they are incomplete/partial
 
 Think through your analysis internally, then provide a natural, narrative answer with supporting evidence. Round all dollar amounts to the nearest dollar. Do not include reasoning steps, calculation methods, or labels like "OBSERVE" or "CALCULATE" in your response - just provide the final synthesized answer."""
         

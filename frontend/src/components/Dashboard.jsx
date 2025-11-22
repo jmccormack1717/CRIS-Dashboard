@@ -27,17 +27,67 @@ const Dashboard = () => {
   // Track requests to prevent race conditions
   const requestIdRef = useRef(0)
   const isMountedRef = useRef(true)
+  const loadingTimeoutRef = useRef(null)
+  
+  // Safety check: ensure loading never gets stuck for more than 35 seconds
+  useEffect(() => {
+    if (loading) {
+      // Clear any existing timeout
+      if (loadingTimeoutRef.current) {
+        clearTimeout(loadingTimeoutRef.current)
+      }
+      
+      // Set a failsafe timeout to force loading to false
+      loadingTimeoutRef.current = setTimeout(() => {
+        if (loading && isMountedRef.current) {
+          console.warn('[Dashboard] Failsafe triggered - loading state stuck, forcing to false')
+          setLoading(false)
+          setError('Loading timeout. Please refresh the page or try again.')
+        }
+      }, 35000)
+    } else {
+      // Clear timeout when loading becomes false
+      if (loadingTimeoutRef.current) {
+        clearTimeout(loadingTimeoutRef.current)
+        loadingTimeoutRef.current = null
+      }
+    }
+    
+    // Cleanup on unmount
+    return () => {
+      if (loadingTimeoutRef.current) {
+        clearTimeout(loadingTimeoutRef.current)
+        loadingTimeoutRef.current = null
+      }
+    }
+  }, [loading])
 
   const fetchData = async (currentFilters, requestId) => {
-    // Only proceed if this is still the latest request
+    // Check if this request is still valid before starting
     if (requestId !== requestIdRef.current || !isMountedRef.current) {
       return
     }
     
-    setLoading(true)
+    // Loading is already set by the debounce timeout, just clear error
     setError(null)
     
+    // Safety timeout: force loading to false after 30 seconds
+    const timeoutId = setTimeout(() => {
+      if (requestId === requestIdRef.current && isMountedRef.current) {
+        console.warn('[Dashboard] Request timeout - forcing loading to false')
+        setLoading(false)
+        setError('Request timed out. Please try again.')
+      }
+    }, 30000)
+    
     try {
+      // Double-check request is still valid
+      if (requestId !== requestIdRef.current || !isMountedRef.current) {
+        clearTimeout(timeoutId)
+        setLoading(false)
+        return
+      }
+      
       // Validate and default numberOfPeriods only when fetching
       const numPeriods = parseInt(currentFilters.numberOfPeriods, 10)
       const filtersToUse = {
@@ -51,6 +101,10 @@ const Dashboard = () => {
       if (requestId === requestIdRef.current && isMountedRef.current) {
         setData(response.data)
         setError(null)
+        setLoading(false)
+      } else {
+        // Request was invalidated - ensure loading is cleared
+        setLoading(false)
       }
     } catch (err) {
       // Only update error if this is still the latest request and not aborted
@@ -58,25 +112,45 @@ const Dashboard = () => {
         setError(err.message || 'Failed to fetch data')
         console.error('Error fetching data:', err)
       }
+      // Always clear loading on error (unless request was invalidated and new one started)
+      setLoading(false)
     } finally {
-      // Only update loading if this is still the latest request
-      if (requestId === requestIdRef.current && isMountedRef.current) {
+      clearTimeout(timeoutId)
+      // Always ensure loading is false if this request is no longer valid
+      if (requestId !== requestIdRef.current) {
         setLoading(false)
       }
     }
   }
 
   const fetchInforceData = async (metricType, requestId) => {
-    // Only proceed if this is still the latest request
+    // Check if this request is still valid before starting
     if (requestId !== requestIdRef.current || !isMountedRef.current) {
+      setLoading(false)
       return
     }
     
     console.log('[Dashboard] fetchInforceData called with metricType:', metricType)
-    setLoading(true)
+    // Loading is already set by the debounce timeout, just clear error
     setError(null)
     
+    // Safety timeout: force loading to false after 30 seconds (inforce processing can take time)
+    const timeoutId = setTimeout(() => {
+      if (requestId === requestIdRef.current && isMountedRef.current) {
+        console.warn('[Dashboard] Inforce request timeout - forcing loading to false')
+        setLoading(false)
+        setError('Request timed out. Please try again.')
+      }
+    }, 30000)
+    
     try {
+      // Double-check request is still valid
+      if (requestId !== requestIdRef.current || !isMountedRef.current) {
+        clearTimeout(timeoutId)
+        setLoading(false)
+        return
+      }
+      
       console.log('[Dashboard] Calling fetchInforceByLine...')
       const response = await fetchInforceByLine(metricType)
       console.log('[Dashboard] Received response:', response)
@@ -85,6 +159,10 @@ const Dashboard = () => {
       if (requestId === requestIdRef.current && isMountedRef.current) {
         setData(response.data || response)
         setError(null)
+        setLoading(false)
+      } else {
+        // Request was invalidated - ensure loading is cleared
+        setLoading(false)
       }
     } catch (err) {
       // Only update error if this is still the latest request and not aborted
@@ -92,9 +170,12 @@ const Dashboard = () => {
         console.error('[Dashboard] Error fetching inforce data:', err)
         setError(err.message || 'Failed to fetch inforce data')
       }
+      // Always clear loading on error (unless request was invalidated and new one started)
+      setLoading(false)
     } finally {
-      // Only update loading if this is still the latest request
-      if (requestId === requestIdRef.current && isMountedRef.current) {
+      clearTimeout(timeoutId)
+      // Always ensure loading is false if this request is no longer valid
+      if (requestId !== requestIdRef.current) {
         setLoading(false)
       }
     }
@@ -115,16 +196,25 @@ const Dashboard = () => {
     const currentRequestId = requestIdRef.current
     
     // For inforce view, use shorter debounce to ensure smooth experience
-    // For time-based view, use normal debounce
-    const debounceDelay = viewType === 'inforce-by-line' ? 50 : 300
+    // For time-based view, use longer debounce to prevent loading flicker when typing/changing dropdowns
+    const debounceDelay = viewType === 'inforce-by-line' ? 50 : 700
     
     // Debounce the API call to prevent rapid updates
+    // Set loading only when the debounce timer actually fires, not immediately
     debounceTimer.current = setTimeout(() => {
       // Double-check this is still the latest request before making API call
       if (currentRequestId !== requestIdRef.current || !isMountedRef.current) {
-        console.log('[Dashboard] Request outdated, skipping')
+        console.log('[Dashboard] Request outdated, skipping - clearing loading state')
+        // Clear loading if this debounced request was cancelled
+        if (isMountedRef.current) {
+          setLoading(false)
+        }
         return
       }
+      
+      // Only now set loading - right before making the API call
+      // This prevents loading flicker when user is still typing or changing dropdowns
+      setLoading(true)
       
       console.log('[Dashboard] Debounce timeout - calling API with viewType:', viewType)
       if (viewType === 'time-based') {
@@ -135,6 +225,9 @@ const Dashboard = () => {
         // Ensure loading state is set before fetching
         if (isMountedRef.current && currentRequestId === requestIdRef.current) {
           fetchInforceData(inforceMetric, currentRequestId)
+        } else {
+          // Request was invalidated, clear loading
+          setLoading(false)
         }
       }
     }, debounceDelay)
@@ -157,9 +250,19 @@ const Dashboard = () => {
     return () => {
       isMountedRef.current = false
       requestIdRef.current += 1
+      
+      // Clear all timers
       if (debounceTimer.current) {
         clearTimeout(debounceTimer.current)
+        debounceTimer.current = null
       }
+      if (loadingTimeoutRef.current) {
+        clearTimeout(loadingTimeoutRef.current)
+        loadingTimeoutRef.current = null
+      }
+      
+      // Ensure loading is cleared on unmount
+      setLoading(false)
     }
   }, [])
 
@@ -173,8 +276,8 @@ const Dashboard = () => {
       debounceTimer.current = null
     }
     
-    // Set loading immediately for smooth transition (will be managed by useEffect)
-    setLoading(true)
+    // Don't set loading immediately - let the debounce timer handle it
+    // This prevents loading flicker when typing in inputs
     
     setFilters(prev => {
       const updated = { ...prev, ...newFilters }
@@ -202,8 +305,14 @@ const Dashboard = () => {
     setData([]) // Clear data when switching views
     setError(null) // Clear errors when switching views
     
-    // Immediately set loading for smooth transition regardless of view type
-    setLoading(true)
+    // Ensure loading is cleared first, then set it immediately for smooth transition
+    setLoading(false)
+    // Use setTimeout to ensure state update happens after clearing
+    setTimeout(() => {
+      if (isMountedRef.current) {
+        setLoading(true)
+      }
+    }, 0)
     
     // Update view type - this will trigger useEffect which will handle the fetch
     setViewType(newViewType)
@@ -219,8 +328,15 @@ const Dashboard = () => {
       debounceTimer.current = null
     }
     
-    // Set loading immediately when changing metric to prevent showing stale data
-    setLoading(true)
+    // Ensure loading is cleared first, then set it immediately
+    setLoading(false)
+    // Use setTimeout to ensure state update happens after clearing
+    setTimeout(() => {
+      if (isMountedRef.current) {
+        setLoading(true)
+      }
+    }, 0)
+    
     setInforceMetric(newMetric)
   }
 
