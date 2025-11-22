@@ -47,21 +47,26 @@ const Dashboard = () => {
   }
 
   const fetchInforceData = async (metricType) => {
+    console.log('[Dashboard] fetchInforceData called with metricType:', metricType)
     setLoading(true)
     setError(null)
     
     try {
+      console.log('[Dashboard] Calling fetchInforceByLine...')
       const response = await fetchInforceByLine(metricType)
-      setData(response.data)
+      console.log('[Dashboard] Received response:', response)
+      setData(response.data || response)
     } catch (err) {
+      console.error('[Dashboard] Error fetching inforce data:', err)
       setError(err.message || 'Failed to fetch inforce data')
-      console.error('Error fetching inforce data:', err)
     } finally {
       setLoading(false)
     }
   }
 
   useEffect(() => {
+    console.log('[Dashboard] useEffect triggered - viewType:', viewType, 'inforceMetric:', inforceMetric, 'filters:', filters)
+    
     // Clear any existing timer
     if (debounceTimer.current) {
       clearTimeout(debounceTimer.current)
@@ -69,9 +74,12 @@ const Dashboard = () => {
     
     // Debounce the API call to prevent rapid updates
     debounceTimer.current = setTimeout(() => {
+      console.log('[Dashboard] Debounce timeout - calling API with viewType:', viewType)
       if (viewType === 'time-based') {
+        console.log('[Dashboard] Fetching time-based data...')
         fetchData(filters)
       } else {
+        console.log('[Dashboard] Fetching inforce data with metric:', inforceMetric)
         fetchInforceData(inforceMetric)
       }
     }, 300) // 300ms debounce
@@ -96,6 +104,7 @@ const Dashboard = () => {
   }
 
   const handleViewTypeChange = (newViewType) => {
+    console.log('[Dashboard] handleViewTypeChange called with:', newViewType)
     setViewType(newViewType)
     setData([]) // Clear data when switching views
   }

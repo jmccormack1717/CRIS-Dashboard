@@ -303,6 +303,12 @@ class DataProcessor:
     
     def _get_expiration_date_from_record(self, record: Dict[str, Any]) -> Optional[datetime]:
         """Extract Expiration Date from QuickBase record"""
+        # Debug: Show what fields are available
+        available_fields = list(record.keys())
+        if self.expiration_date_field_id not in available_fields:
+            # Field ID not found in record - return None silently (debug is handled in filter_inforce_policies)
+            return None
+        
         exp_date_data = record.get(self.expiration_date_field_id, {})
         
         # Handle both dict format {"value": X} and direct value
@@ -316,7 +322,8 @@ class DataProcessor:
             try:
                 quickbase_epoch = datetime(1970, 1, 1)
                 days = int(exp_date_value)
-                return quickbase_epoch + timedelta(days=days)
+                parsed_date = quickbase_epoch + timedelta(days=days)
+                return parsed_date
             except (ValueError, TypeError):
                 return None
         
@@ -346,16 +353,50 @@ class DataProcessor:
         print(f"\nDEBUG: Filtering for inforce policies")
         print(f"  Today's date: {today.date()}")
         print(f"  Total policies: {len(raw_data)}")
+        print(f"  Looking for expiration date field ID: '{self.expiration_date_field_id}'")
+        print(f"  Looking for effective date field ID: '{self.date_field_id}'")
+        print(f"  Looking for line field ID: '{self.line_field_id}'")
+        
+        # Show sample record structure if available
+        if raw_data:
+            print(f"\n  Sample record structure (first record):")
+            print(f"    Available field IDs: {list(raw_data[0].keys())}")
+            if self.expiration_date_field_id in raw_data[0]:
+                print(f"    Expiration date field '{self.expiration_date_field_id}' exists: {raw_data[0][self.expiration_date_field_id]}")
+            else:
+                print(f"    WARNING: Expiration date field '{self.expiration_date_field_id}' NOT FOUND in record")
+            if self.date_field_id in raw_data[0]:
+                print(f"    Effective date field '{self.date_field_id}' exists: {raw_data[0][self.date_field_id]}")
+            else:
+                print(f"    WARNING: Effective date field '{self.date_field_id}' NOT FOUND in record")
+            if self.line_field_id in raw_data[0]:
+                print(f"    Line field '{self.line_field_id}' exists: {raw_data[0][self.line_field_id]}")
+            else:
+                print(f"    WARNING: Line field '{self.line_field_id}' NOT FOUND in record")
+        
+        skipped_no_eff = 0
+        skipped_no_exp = 0
+        skipped_date_range = 0
+        processed = 0
         
         for record in raw_data:
             # Get effective date
             eff_date = self._get_date_from_record(record)
             if not eff_date:
+                skipped_no_eff += 1
                 continue
             
             # Get expiration date
             exp_date = self._get_expiration_date_from_record(record)
             if not exp_date:
+                skipped_no_exp += 1
+                # Add debug for first few failures
+                if skipped_no_exp <= 3:
+                    available_fields = list(record.keys())
+                    exp_field_data = record.get(self.expiration_date_field_id, "FIELD NOT FOUND")
+                    print(f"\n  DEBUG: Record {skipped_no_exp} skipped - no expiration date")
+                    print(f"    Available fields: {available_fields}")
+                    print(f"    Expiration date field '{self.expiration_date_field_id}': {exp_field_data}")
                 continue
             
             # Check if today is between effective date and expiration date (inclusive)
@@ -364,10 +405,23 @@ class DataProcessor:
             exp_date_only = exp_date.date()
             today_only = today.date()
             
+            processed += 1
             if eff_date_only <= today_only <= exp_date_only:
                 inforce_policies.append(record)
+            else:
+                skipped_date_range += 1
+                # Debug first few date range failures
+                if skipped_date_range <= 3:
+                    print(f"\n  DEBUG: Record skipped - date range mismatch")
+                    print(f"    Effective: {eff_date_only}, Expiration: {exp_date_only}, Today: {today_only}")
+                    print(f"    Range check: {eff_date_only} <= {today_only} <= {exp_date_only} = False")
         
-        print(f"  Inforce policies: {len(inforce_policies)}")
+        print(f"\n  Filter Results:")
+        print(f"    Processed with both dates: {processed}")
+        print(f"    Skipped (no effective date): {skipped_no_eff}")
+        print(f"    Skipped (no expiration date): {skipped_no_exp}")
+        print(f"    Skipped (date range mismatch): {skipped_date_range}")
+        print(f"    Inforce policies: {len(inforce_policies)}")
         return inforce_policies
     
     def get_line_value(self, record: Dict[str, Any]) -> str:

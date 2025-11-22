@@ -52,12 +52,15 @@ export const getAvailablePeriods = async () => {
 
 export const fetchInforceByLine = async (metricType) => {
   try {
+    console.log('[API] Calling /api/inforce-by-line with metric_type:', metricType)
     const response = await api.post('/api/inforce-by-line', {
       metric_type: metricType
     })
+    console.log('[API] Inforce-by-line response:', response.data)
     return response.data
   } catch (error) {
-    console.error('API Error:', error)
+    console.error('[API] Error calling inforce-by-line:', error)
+    console.error('[API] Error response:', error.response)
     throw new Error(error.response?.data?.detail || 'Failed to fetch inforce data')
   }
 }
