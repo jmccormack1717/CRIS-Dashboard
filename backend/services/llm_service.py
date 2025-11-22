@@ -245,7 +245,14 @@ class LLMService:
         elif view_type == "inforce-by-line":
             metric_type = dashboard_state.get("metric_type", "policy_count")
             context_parts.append(f"Metric Type: {metric_type}")
-            context_parts.append("Note: Inforce policies are those currently active (TODAY is between effective date and expiration date)")
+            context_parts.append("")
+            context_parts.append("IMPORTANT: INFORCE DATA EXPLANATION")
+            context_parts.append("Inforce policies are those currently active RIGHT NOW (TODAY is between effective date and expiration date).")
+            context_parts.append("Inforce data represents a SNAPSHOT of the current active policy portfolio, not historical trends.")
+            context_parts.append("When asked about 'over the years' for inforce data, explain that inforce is a current state measurement.")
+            context_parts.append("You can analyze the CURRENT distribution by line, percentages, and compare lines, but cannot show historical trends.")
+            context_parts.append("For historical trends over time, refer to the all-time summary data (policies, premium, commission by period).")
+            context_parts.append("")
             
             # Include comprehensive inforce summary if available
             if inforce_summary:
@@ -315,6 +322,13 @@ class LLMService:
                 context_parts.append("NO ROUNDING: All values are raw floats - no rounding applied anywhere.")
                 context_parts.append("Round all dollar amounts to the nearest dollar (NO CENTS) when presenting to users.")
                 context_parts.append("")
+                context_parts.append("INFORCE DATA ANALYSIS CAPABILITIES:")
+                context_parts.append("- Compare performance across different lines of business")
+                context_parts.append("- Identify which lines have the most policies, premium, or commission")
+                context_parts.append("- Calculate percentages and distributions by line")
+                context_parts.append("- Analyze trends in inforce policies over time (if historical data is available)")
+                context_parts.append("- Compare average premiums across different lines")
+                context_parts.append("")
             
             # Current view data (what's currently displayed)
             data = dashboard_state.get("data", [])
@@ -325,7 +339,12 @@ class LLMService:
                 context_parts.append(f"\nCurrent View Summary (Currently Displayed):")
                 context_parts.append(f"- Metric Type: {metric_type}")
                 context_parts.append(f"- Total Lines: {len(data)}")
-                context_parts.append(f"- Total Value: {total_value:,.6f} (raw value, no rounding)")
+                # Format total value based on metric type
+                if metric_type in ["premium", "commission", "avg_premium"]:
+                    formatted_total = f"${total_value:,.6f}"
+                else:
+                    formatted_total = f"{total_value:,.0f}"
+                context_parts.append(f"- Total Value: {formatted_total} (raw value, no rounding)")
                 context_parts.append(f"- Total Policies (inforce): {total_count}")
                 
                 # Show all lines in current view
@@ -336,10 +355,17 @@ class LLMService:
                     value = item.get("value", 0)
                     percent = item.get("percent", 0) if item.get("percent") is not None else 0
                     count = item.get("count", 0) if item.get("count") is not None else 0
+                    
+                    # Format value based on metric type
                     if metric_type == "avg_premium":
-                        context_parts.append(f"  {line}: ${value:,.6f} (avg, {count} policies)")
-                    else:
-                        context_parts.append(f"  {line}: ${value:,.6f if metric_type in ['premium', 'commission'] else value:,.0f} ({percent:.2f}%, {count} policies)")
+                        formatted_value = f"${value:,.6f}"
+                        context_parts.append(f"  {line}: {formatted_value} (avg, {count} policies)")
+                    elif metric_type in ["premium", "commission"]:
+                        formatted_value = f"${value:,.6f}"
+                        context_parts.append(f"  {line}: {formatted_value} ({percent:.2f}%, {count} policies)")
+                    else:  # policy_count
+                        formatted_value = f"{value:,.0f}"
+                        context_parts.append(f"  {line}: {formatted_value} ({percent:.2f}%, {count} policies)")
         
         return "\n".join(context_parts)
     
@@ -532,6 +558,8 @@ ANALYTICAL CAPABILITIES:
 - Trend Analysis: Identify upward/downward trends, growth patterns, declining periods
 - Multi-dimensional Analysis: Compare policies vs premium vs commission patterns, identify relationships
 - Contextual Insights: Relate findings to business implications and actionable recommendations
+- INFORCE ANALYSIS: Analyze current active policies by line of business, compare distributions, calculate percentages
+- Line-of-Business Analysis: Compare performance across different lines (MPL, IABEO, etc.), identify top performers
 
 DATA ACCESS:
 - You have complete historical data broken down by quarter, year, and month
@@ -539,6 +567,11 @@ DATA ACCESS:
 - All values match the dashboard graph exactly - same source, same calculations
 - Use the structured JSON data for ALL calculations - parse it carefully
 - Pre-calculated insights are provided, but do your own deep analysis too
+- INFORCE DATA: You also have access to complete inforce metrics by line of business
+- Inforce data includes: Policy Count by Line, Premium by Line, Commission by Line, Average Premium by Line
+- Inforce means policies that are currently active (TODAY is between effective date and expiration date)
+- Use the inforce summary data to answer questions about current active policies by line
+- All inforce values match the dashboard exactly - same filtering and calculations
 
 ANALYSIS APPROACH:
 Think through these questions internally, but only output the final answer:
@@ -585,7 +618,12 @@ EXAMPLE QUESTIONS YOU CAN ANSWER:
 - "Compare Q1 performance across all years" → Compare Q1 across years, explain trends naturally
 - "Is there a seasonal pattern?" → Identify patterns and explain them like you're in a business meeting
 - "What's our growth rate?" → Calculate and explain growth trends in business terms
-- "Which year had the best performance?" → Compare years and explain which performed best and why"""
+- "Which year had the best performance?" → Compare years and explain which performed best and why
+- "How have inforce line policies been over the years?" → Use the inforce summary data to analyze current inforce policies by line
+- "Which line of business has the most inforce policies?" → Compare policy counts across lines from the inforce data
+- "What percentage of inforce premium comes from MPL?" → Use the premium by line data to calculate percentages
+- "How does inforce commission compare across lines?" → Use the commission by line data to compare and rank lines
+- "What's the average premium by line for inforce policies?" → Use the avg_premium data to compare averages across lines"""
         
         # Build messages
         messages = [
