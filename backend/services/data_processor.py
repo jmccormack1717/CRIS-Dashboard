@@ -13,6 +13,8 @@ class DataProcessor:
         self.date_field_id = os.getenv("QUICKBASE_DATE_FIELD", "10")
         self.premium_field_id = str(os.getenv("QUICKBASE_PREMIUM_FIELD", "13"))
         self.commission_field_id = str(os.getenv("QUICKBASE_COMMISSION_FIELD", "19"))
+        self.expiration_date_field_id = str(os.getenv("QUICKBASE_EXPIRATION_DATE_FIELD", "11"))
+        self.line_field_id = str(os.getenv("QUICKBASE_LINE_FIELD", "12"))
         
         # Measure fields mapping
         # Policies doesn't have a field ID - it's a count of records
@@ -322,4 +324,170 @@ class DataProcessor:
         elif period == "year":
             return period_key
         return period_key
+    
+    def _get_expiration_date_from_record(self, record: Dict[str, Any]) -> Optional[datetime]:
+        """Extract Expiration Date from QuickBase record"""
+        exp_date_data = record.get(self.expiration_date_field_id, {})
+        
+        # Handle both dict format {"value": X} and direct value
+        if isinstance(exp_date_data, dict):
+            exp_date_value = exp_date_data.get("value", "")
+        else:
+            exp_date_value = exp_date_data
+        
+        # Handle QuickBase date code (days since epoch)
+        if isinstance(exp_date_value, (int, float)):
+            try:
+                quickbase_epoch = datetime(1970, 1, 1)
+                days = int(exp_date_value)
+                return quickbase_epoch + timedelta(days=days)
+            except (ValueError, TypeError):
+                return None
+        
+        # Convert to string for parsing
+        exp_date_str = str(exp_date_value) if exp_date_value else ""
+        
+        if not exp_date_str or exp_date_str == "None":
+            return None
+        
+        # Try various date formats
+        for fmt in ["%Y-%m-%d", "%Y-%m-%d %H:%M:%S", "%m/%d/%Y", "%Y-%m-%dT%H:%M:%S", "%Y-%m-%d %H:%M:%S.%f"]:
+            try:
+                return datetime.strptime(exp_date_str, fmt)
+            except ValueError:
+                continue
+        
+        return None
+    
+    def filter_inforce_policies(self, raw_data: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+        """
+        Filter policies to only include those that are currently inforce.
+        Inforce means: TODAY() is between effective date and expiration date.
+        """
+        today = datetime.now()
+        inforce_policies = []
+        
+        print(f"\nDEBUG: Filtering for inforce policies")
+        print(f"  Today's date: {today.date()}")
+        print(f"  Total policies: {len(raw_data)}")
+        
+        for record in raw_data:
+            # Get effective date
+            eff_date = self._get_date_from_record(record)
+            if not eff_date:
+                continue
+            
+            # Get expiration date
+            exp_date = self._get_expiration_date_from_record(record)
+            if not exp_date:
+                continue
+            
+            # Check if today is between effective date and expiration date (inclusive)
+            # Compare dates (ignoring time)
+            eff_date_only = eff_date.date()
+            exp_date_only = exp_date.date()
+            today_only = today.date()
+            
+            if eff_date_only <= today_only <= exp_date_only:
+                inforce_policies.append(record)
+        
+        print(f"  Inforce policies: {len(inforce_policies)}")
+        return inforce_policies
+    
+    def get_line_value(self, record: Dict[str, Any]) -> str:
+        """Extract Line value from QuickBase record"""
+        line_data = record.get(self.line_field_id, {})
+        
+        # Handle both dict format {"value": X} and direct value
+        if isinstance(line_data, dict):
+            line_value = line_data.get("value", "")
+        else:
+            line_value = str(line_data) if line_data else ""
+        
+        # Return "Unknown" if empty
+        return str(line_value).strip() if line_value else "Unknown"
+    
+    def process_inforce_by_line(
+        self,
+        raw_data: List[Dict[str, Any]],
+        metric_type: str  # "policy_count", "premium", "commission", "avg_premium"
+    ) -> List[Dict[str, Any]]:
+        """
+        Process inforce policies grouped by Line.
+        
+        Args:
+            raw_data: Raw policy records from QuickBase
+            metric_type: Type of metric to calculate
+                - "policy_count": Count and percent of policies by Line
+                - "premium": Premium and percent by Line
+                - "commission": Commission and percent by Line
+                - "avg_premium": Average premium by Line (for bar chart)
+        
+        Returns:
+            List of dicts with Line, value, count, and percent
+        """
+        # Filter for inforce policies
+        inforce_policies = self.filter_inforce_policies(raw_data)
+        
+        if not inforce_policies:
+            return []
+        
+        # Group by Line
+        line_data = defaultdict(lambda: {"count": 0, "premium": 0.0, "commission": 0.0})
+        
+        for record in inforce_policies:
+            line = self.get_line_value(record)
+            premium = self._get_measure_value(record, "premium")
+            commission = self._get_measure_value(record, "commission")
+            
+            line_data[line]["count"] += 1
+            line_data[line]["premium"] += premium
+            line_data[line]["commission"] += commission
+        
+        # Calculate totals for percent calculation
+        total_count = sum(data["count"] for data in line_data.values())
+        total_premium = sum(data["premium"] for data in line_data.values())
+        total_commission = sum(data["commission"] for data in line_data.values())
+        
+        # Build result based on metric type
+        result = []
+        for line, data in sorted(line_data.items()):
+            count = data["count"]
+            premium = data["premium"]
+            commission = data["commission"]
+            avg_premium = premium / count if count > 0 else 0.0
+            
+            if metric_type == "policy_count":
+                percent = (count / total_count * 100) if total_count > 0 else 0.0
+                result.append({
+                    "line": line,
+                    "count": count,
+                    "value": count,
+                    "percent": round(percent, 2)
+                })
+            elif metric_type == "premium":
+                percent = (premium / total_premium * 100) if total_premium > 0 else 0.0
+                result.append({
+                    "line": line,
+                    "count": count,
+                    "value": round(premium, 2),
+                    "percent": round(percent, 2)
+                })
+            elif metric_type == "commission":
+                percent = (commission / total_commission * 100) if total_commission > 0 else 0.0
+                result.append({
+                    "line": line,
+                    "count": count,
+                    "value": round(commission, 2),
+                    "percent": round(percent, 2)
+                })
+            elif metric_type == "avg_premium":
+                result.append({
+                    "line": line,
+                    "count": count,
+                    "value": round(avg_premium, 2),
+                    "label": line  # For chart display
+                })
+        
+        return result
 

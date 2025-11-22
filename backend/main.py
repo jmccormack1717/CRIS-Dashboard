@@ -102,6 +102,61 @@ async def get_available_periods():
         "periods": ["month", "quarter", "year"]
     }
 
+class InforceByLineRequest(BaseModel):
+    metric_type: str  # "policy_count", "premium", "commission", "avg_premium"
+
+@app.post("/api/inforce-by-line")
+async def get_inforce_by_line(request: InforceByLineRequest):
+    """
+    Get inforce metrics grouped by Line.
+    
+    Metric types:
+    - "policy_count": Policy Count (inforce) by Line (Count and Percent)
+    - "premium": Premium (inforce) by Line (Count and Percent)
+    - "commission": Commission (inforce) by Line (Count and Percent)
+    - "avg_premium": Average Premium (inforce) by Line (Bar Chart with numerical Values)
+    """
+    print("\n" + "=" * 80)
+    print("DEBUG: API /api/inforce-by-line endpoint called")
+    print(f"  Request: {request.dict()}")
+    print("=" * 80)
+    
+    valid_metric_types = ["policy_count", "premium", "commission", "avg_premium"]
+    if request.metric_type not in valid_metric_types:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Invalid metric_type: {request.metric_type}. Must be one of {valid_metric_types}"
+        )
+    
+    try:
+        # Fetch raw data from QuickBase (with inforce fields)
+        raw_data = await quickbase_client.fetch_data(include_inforce_fields=True)
+        
+        print(f"\nDEBUG: Received {len(raw_data)} raw records from QuickBase")
+        
+        # Process inforce data by Line
+        processed_data = data_processor.process_inforce_by_line(
+            raw_data=raw_data,
+            metric_type=request.metric_type
+        )
+        
+        print(f"\nDEBUG: Returning {len(processed_data)} processed data points")
+        print("=" * 80)
+        
+        return {
+            "success": True,
+            "data": processed_data,
+            "metric_type": request.metric_type
+        }
+    except Exception as e:
+        import traceback
+        error_trace = traceback.format_exc()
+        print(f"\nERROR in /api/inforce-by-line:")
+        print(f"  {str(e)}")
+        print(f"  Traceback:\n{error_trace}")
+        print("=" * 80)
+        raise HTTPException(status_code=500, detail=str(e))
+
 @app.get("/api/debug/config")
 async def get_debug_config():
     """Get debug configuration information"""
@@ -115,6 +170,8 @@ async def get_debug_config():
         "date_field_id": data_processor.date_field_id,
         "premium_field_id": data_processor.premium_field_id,
         "commission_field_id": data_processor.commission_field_id,
+        "expiration_date_field_id": data_processor.expiration_date_field_id,
+        "line_field_id": data_processor.line_field_id,
         "measure_fields": data_processor.measure_fields,
         "policies": "COUNT of records (no field ID)",
         "status_filter": {
