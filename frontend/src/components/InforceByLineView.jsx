@@ -25,11 +25,12 @@ const NAVY_COLORS = [
   '#1e40af'   // Deep navy
 ]
 
-const InforceByLineView = ({ data, metricType }) => {
+const InforceByLineView = ({ data, metricType, loading }) => {
   const [showTable, setShowTable] = useState(false)
 
-  // Handle empty data
-  if (!data || data.length === 0) {
+  // Handle empty data - but only if not loading (to prevent showing "No data" during fetch)
+  // Pass loading prop from parent to know if we're still fetching
+  if (!loading && (!data || data.length === 0)) {
     return (
       <div className="inforce-view">
         <div className="no-data">
@@ -37,6 +38,11 @@ const InforceByLineView = ({ data, metricType }) => {
         </div>
       </div>
     )
+  }
+  
+  // If loading, don't render the main content yet
+  if (loading && (!data || data.length === 0)) {
+    return null // Loading state is handled by parent component
   }
 
   const formatValue = (value) => {

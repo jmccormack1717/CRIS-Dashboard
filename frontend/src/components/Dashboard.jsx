@@ -104,19 +104,25 @@ const Dashboard = () => {
     isMountedRef.current = true
     console.log('[Dashboard] useEffect triggered - viewType:', viewType, 'inforceMetric:', inforceMetric, 'filters:', filters)
     
-    // Clear any existing timer
+    // Clear any existing timer to ensure fresh fetch
     if (debounceTimer.current) {
       clearTimeout(debounceTimer.current)
+      debounceTimer.current = null
     }
     
     // Increment request ID to invalidate any previous requests
     requestIdRef.current += 1
     const currentRequestId = requestIdRef.current
     
+    // For inforce view, use shorter debounce to ensure smooth experience
+    // For time-based view, use normal debounce
+    const debounceDelay = viewType === 'inforce-by-line' ? 50 : 300
+    
     // Debounce the API call to prevent rapid updates
     debounceTimer.current = setTimeout(() => {
       // Double-check this is still the latest request before making API call
       if (currentRequestId !== requestIdRef.current || !isMountedRef.current) {
+        console.log('[Dashboard] Request outdated, skipping')
         return
       }
       
@@ -126,9 +132,12 @@ const Dashboard = () => {
         fetchData(filters, currentRequestId)
       } else {
         console.log('[Dashboard] Fetching inforce data with metric:', inforceMetric)
-        fetchInforceData(inforceMetric, currentRequestId)
+        // Ensure loading state is set before fetching
+        if (isMountedRef.current && currentRequestId === requestIdRef.current) {
+          fetchInforceData(inforceMetric, currentRequestId)
+        }
       }
-    }, 300) // 300ms debounce
+    }, debounceDelay)
     
     // Cleanup timer on unmount or filter change
     return () => {
@@ -171,16 +180,37 @@ const Dashboard = () => {
     // Invalidate any pending requests when switching views
     requestIdRef.current += 1
     
-    setViewType(newViewType)
+    // Clear existing timer to ensure fresh fetch
+    if (debounceTimer.current) {
+      clearTimeout(debounceTimer.current)
+      debounceTimer.current = null
+    }
+    
+    // Clear data and error immediately
     setData([]) // Clear data when switching views
     setError(null) // Clear errors when switching views
-    setLoading(false) // Reset loading state
+    
+    // If switching to inforce view, immediately set loading to prevent showing "No data available"
+    if (newViewType === 'inforce-by-line') {
+      setLoading(true)
+    }
+    
+    // Update view type - this will trigger useEffect which will handle the fetch
+    setViewType(newViewType)
   }
 
   const handleInforceMetricChange = (newMetric) => {
     // Invalidate any pending requests when changing metric
     requestIdRef.current += 1
     
+    // Clear existing timer to ensure fresh fetch
+    if (debounceTimer.current) {
+      clearTimeout(debounceTimer.current)
+      debounceTimer.current = null
+    }
+    
+    // Set loading immediately when changing metric to prevent showing stale data
+    setLoading(true)
     setInforceMetric(newMetric)
   }
 
@@ -313,11 +343,20 @@ const Dashboard = () => {
             </div>
           )}
           
-          {!loading && !error && (
+          {!loading && !error && data && data.length > 0 && (
             <InforceByLineView 
               data={data} 
               metricType={inforceMetric}
+              loading={loading}
             />
+          )}
+          
+          {!loading && !error && (!data || data.length === 0) && (
+            <div className="inforce-view">
+              <div className="no-data">
+                <p>No inforce data available</p>
+              </div>
+            </div>
           )}
         </div>
       )}
@@ -339,4 +378,5 @@ const Dashboard = () => {
 }
 
 export default Dashboard
+
 
