@@ -1,9 +1,8 @@
 .dashboard {
-  background: var(--bg-primary);
+  background: transparent;
   border-radius: 12px;
-  padding: 2rem;
-  box-shadow: 0 2px 12px var(--shadow);
-  transition: background-color 0.3s ease, box-shadow 0.3s ease;
+  padding: 0;
+  box-shadow: none;
 }
 
 .loading {
@@ -59,11 +58,12 @@
 }
 
 .view-selector {
-  background: var(--bg-primary);
-  border-radius: 8px;
+  background: var(--bg-secondary);
+  border-radius: 10px;
   padding: 1rem;
   margin-bottom: 1rem;
-  box-shadow: 0 2px 8px var(--shadow);
+  box-shadow: 0 2px 10px var(--shadow);
+  border: 1px solid var(--border-light);
   display: flex;
   gap: 1rem;
   align-items: center;
@@ -90,8 +90,17 @@
   background-color: var(--bg-tertiary);
 }
 
-.view-selector button[style*="background-color: rgb(102, 126, 234)"] {
+.view-selector button {
+  transition: all 0.2s ease;
+}
+
+.view-selector button:hover {
+  background-color: var(--bg-tertiary);
+}
+
+.view-selector button[style*="background-color"] {
   background-color: var(--color-primary) !important;
   color: white !important;
+  border-color: var(--color-accent) !important;
 }
 

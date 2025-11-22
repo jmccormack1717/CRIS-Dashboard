@@ -18,33 +18,31 @@ import {
 } from 'recharts'
 import './ChartView.css'
 
-// Insurance-themed color palette
-const INSURANCE_COLORS = {
-  primary: '#1e3a8a',      // Deep insurance blue
-  secondary: '#3b82f6',    // Medium blue
-  accent: '#60a5fa',       // Light blue
-  success: '#059669',      // Green for positive trends
-  warning: '#d97706',      // Orange for attention
-  danger: '#dc2626',       // Red for alerts
+// Sleek Navy Theme Colors
+const NAVY_COLORS = {
+  primary: '#1e3a8a',
+  secondary: '#3b82f6',
+  accent: '#60a5fa',
+  light: '#93c5fd',
   chart: {
-    blue: '#2563eb',
-    teal: '#0d9488',
-    indigo: '#6366f1',
-    slate: '#475569',
-    cyan: '#0891b2',
     navy: '#1e40af',
-    sky: '#0284c7'
+    blue: '#3b82f6',
+    sky: '#0ea5e9',
+    cyan: '#06b6d4',
+    teal: '#14b8a6',
+    indigo: '#6366f1',
+    lightBlue: '#60a5fa'
   }
 }
 
 const CHART_COLORS = [
-  INSURANCE_COLORS.chart.blue,
-  INSURANCE_COLORS.chart.teal,
-  INSURANCE_COLORS.chart.indigo,
-  INSURANCE_COLORS.chart.slate,
-  INSURANCE_COLORS.chart.cyan,
-  INSURANCE_COLORS.chart.navy,
-  INSURANCE_COLORS.chart.sky
+  '#3b82f6',  // Bright blue
+  '#0ea5e9',  // Sky blue
+  '#60a5fa',  // Light blue
+  '#06b6d4',  // Cyan
+  '#14b8a6',  // Teal
+  '#6366f1',  // Indigo
+  '#1e40af'   // Deep navy
 ]
 
 const ChartView = ({ data, measure, period, chartType = 'bar' }) => {
@@ -75,31 +73,40 @@ const ChartView = ({ data, measure, period, chartType = 'bar' }) => {
         return (
           <ResponsiveContainer width="100%" height={400}>
             <LineChart {...commonProps}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+              <CartesianGrid strokeDasharray="3 3" stroke="#1e3a8a" strokeOpacity={0.2} />
               <XAxis 
                 dataKey="label" 
                 angle={-45}
                 textAnchor="end"
                 height={100}
-                stroke="#6b7280"
+                stroke="#94a3b8"
+                tick={{ fill: '#cbd5e1' }}
               />
               <YAxis 
                 tickFormatter={yAxisFormatter}
-                stroke="#6b7280"
+                stroke="#94a3b8"
+                tick={{ fill: '#cbd5e1' }}
               />
               <Tooltip 
                 formatter={(value) => formatValue(value)}
-                contentStyle={{ backgroundColor: '#fff', border: '1px solid #e5e7eb', borderRadius: '4px' }}
-                labelStyle={{ color: '#1f2937' }}
+                contentStyle={{ 
+                  backgroundColor: '#0f172a', 
+                  border: '1px solid #1e3a8a', 
+                  borderRadius: '8px',
+                  color: '#e2e8f0'
+                }}
+                labelStyle={{ color: '#60a5fa' }}
               />
-              <Legend />
+              <Legend 
+                wrapperStyle={{ color: '#cbd5e1' }}
+              />
               <Line 
                 type="monotone" 
                 dataKey="value" 
-                stroke={INSURANCE_COLORS.chart.blue} 
+                stroke={NAVY_COLORS.accent} 
                 strokeWidth={3}
-                dot={{ fill: INSURANCE_COLORS.chart.blue, r: 5 }}
-                activeDot={{ r: 7 }}
+                dot={{ fill: NAVY_COLORS.accent, r: 5 }}
+                activeDot={{ r: 7, fill: NAVY_COLORS.secondary }}
                 name={measure.charAt(0).toUpperCase() + measure.slice(1)}
               />
             </LineChart>
@@ -112,32 +119,41 @@ const ChartView = ({ data, measure, period, chartType = 'bar' }) => {
             <AreaChart {...commonProps}>
               <defs>
                 <linearGradient id="colorValue" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor={INSURANCE_COLORS.chart.blue} stopOpacity={0.8}/>
-                  <stop offset="95%" stopColor={INSURANCE_COLORS.chart.blue} stopOpacity={0.1}/>
+                  <stop offset="5%" stopColor={NAVY_COLORS.secondary} stopOpacity={0.8}/>
+                  <stop offset="95%" stopColor={NAVY_COLORS.accent} stopOpacity={0.1}/>
                 </linearGradient>
               </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+              <CartesianGrid strokeDasharray="3 3" stroke="#1e3a8a" strokeOpacity={0.2} />
               <XAxis 
                 dataKey="label" 
                 angle={-45}
                 textAnchor="end"
                 height={100}
-                stroke="#6b7280"
+                stroke="#94a3b8"
+                tick={{ fill: '#cbd5e1' }}
               />
               <YAxis 
                 tickFormatter={yAxisFormatter}
-                stroke="#6b7280"
+                stroke="#94a3b8"
+                tick={{ fill: '#cbd5e1' }}
               />
               <Tooltip 
                 formatter={(value) => formatValue(value)}
-                contentStyle={{ backgroundColor: '#fff', border: '1px solid #e5e7eb', borderRadius: '4px' }}
-                labelStyle={{ color: '#1f2937' }}
+                contentStyle={{ 
+                  backgroundColor: '#0f172a', 
+                  border: '1px solid #1e3a8a', 
+                  borderRadius: '8px',
+                  color: '#e2e8f0'
+                }}
+                labelStyle={{ color: '#60a5fa' }}
               />
-              <Legend />
+              <Legend 
+                wrapperStyle={{ color: '#cbd5e1' }}
+              />
               <Area 
                 type="monotone" 
                 dataKey="value" 
-                stroke={INSURANCE_COLORS.chart.blue} 
+                stroke={NAVY_COLORS.accent} 
                 fill="url(#colorValue)"
                 name={measure.charAt(0).toUpperCase() + measure.slice(1)}
               />
@@ -166,10 +182,17 @@ const ChartView = ({ data, measure, period, chartType = 'bar' }) => {
               </Pie>
               <Tooltip 
                 formatter={(value) => formatValue(value)}
-                contentStyle={{ backgroundColor: '#fff', border: '1px solid #e5e7eb', borderRadius: '4px' }}
-                labelStyle={{ color: '#1f2937' }}
+                contentStyle={{ 
+                  backgroundColor: '#0f172a', 
+                  border: '1px solid #1e3a8a', 
+                  borderRadius: '8px',
+                  color: '#e2e8f0'
+                }}
+                labelStyle={{ color: '#60a5fa' }}
               />
-              <Legend />
+              <Legend 
+                wrapperStyle={{ color: '#cbd5e1' }}
+              />
             </PieChart>
           </ResponsiveContainer>
         )
@@ -180,28 +203,37 @@ const ChartView = ({ data, measure, period, chartType = 'bar' }) => {
         return (
           <ResponsiveContainer width="100%" height={400}>
             <BarChart {...commonProps}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+              <CartesianGrid strokeDasharray="3 3" stroke="#1e3a8a" strokeOpacity={0.2} />
               <XAxis 
                 dataKey="label" 
                 angle={-45}
                 textAnchor="end"
                 height={100}
-                stroke="#6b7280"
+                stroke="#94a3b8"
+                tick={{ fill: '#cbd5e1' }}
               />
               <YAxis 
                 tickFormatter={yAxisFormatter}
-                stroke="#6b7280"
+                stroke="#94a3b8"
+                tick={{ fill: '#cbd5e1' }}
               />
               <Tooltip 
                 formatter={(value) => formatValue(value)}
-                contentStyle={{ backgroundColor: '#fff', border: '1px solid #e5e7eb', borderRadius: '4px' }}
-                labelStyle={{ color: '#1f2937' }}
+                contentStyle={{ 
+                  backgroundColor: '#0f172a', 
+                  border: '1px solid #1e3a8a', 
+                  borderRadius: '8px',
+                  color: '#e2e8f0'
+                }}
+                labelStyle={{ color: '#60a5fa' }}
               />
-              <Legend />
+              <Legend 
+                wrapperStyle={{ color: '#cbd5e1' }}
+              />
               <Bar 
                 dataKey="value" 
                 stackId="a"
-                fill={INSURANCE_COLORS.chart.blue}
+                fill={NAVY_COLORS.secondary}
                 name={measure.charAt(0).toUpperCase() + measure.slice(1)}
                 radius={[8, 8, 0, 0]}
               />
@@ -214,27 +246,36 @@ const ChartView = ({ data, measure, period, chartType = 'bar' }) => {
         return (
           <ResponsiveContainer width="100%" height={400}>
             <BarChart {...commonProps}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+              <CartesianGrid strokeDasharray="3 3" stroke="#1e3a8a" strokeOpacity={0.2} />
               <XAxis 
                 dataKey="label" 
                 angle={-45}
                 textAnchor="end"
                 height={100}
-                stroke="#6b7280"
+                stroke="#94a3b8"
+                tick={{ fill: '#cbd5e1' }}
               />
               <YAxis 
                 tickFormatter={yAxisFormatter}
-                stroke="#6b7280"
+                stroke="#94a3b8"
+                tick={{ fill: '#cbd5e1' }}
               />
               <Tooltip 
                 formatter={(value) => formatValue(value)}
-                contentStyle={{ backgroundColor: '#fff', border: '1px solid #e5e7eb', borderRadius: '4px' }}
-                labelStyle={{ color: '#1f2937' }}
+                contentStyle={{ 
+                  backgroundColor: '#0f172a', 
+                  border: '1px solid #1e3a8a', 
+                  borderRadius: '8px',
+                  color: '#e2e8f0'
+                }}
+                labelStyle={{ color: '#60a5fa' }}
               />
-              <Legend />
+              <Legend 
+                wrapperStyle={{ color: '#cbd5e1' }}
+              />
               <Bar 
                 dataKey="value" 
-                fill={INSURANCE_COLORS.chart.blue}
+                fill={NAVY_COLORS.secondary}
                 name={measure.charAt(0).toUpperCase() + measure.slice(1)}
                 radius={[8, 8, 0, 0]}
               >

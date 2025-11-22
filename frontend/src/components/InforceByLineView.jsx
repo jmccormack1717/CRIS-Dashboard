@@ -12,16 +12,15 @@ import {
 } from 'recharts'
 import './ChartView.css'
 
-// Insurance-themed colors
-const INSURANCE_COLORS = [
-  '#2563eb',  // Blue
-  '#0d9488',  // Teal
+// Sleek Navy Theme Colors
+const NAVY_COLORS = [
+  '#3b82f6',  // Bright blue
+  '#0ea5e9',  // Sky blue
+  '#60a5fa',  // Light blue
+  '#06b6d4',  // Cyan
+  '#14b8a6',  // Teal
   '#6366f1',  // Indigo
-  '#475569',  // Slate
-  '#0891b2',  // Cyan
-  '#1e40af',  // Navy
-  '#0284c7',  // Sky
-  '#059669'   // Green
+  '#1e40af'   // Deep navy
 ]
 
 const InforceByLineView = ({ data, metricType }) => {
@@ -88,13 +87,20 @@ const InforceByLineView = ({ data, metricType }) => {
                   angle={-45}
                   textAnchor="end"
                   height={100}
+                  stroke="#94a3b8"
+                  tick={{ fill: '#cbd5e1' }}
                 />
-                <YAxis tickFormatter={(value) => {
-                  if (metricType === 'premium' || metricType === 'commission' || metricType === 'avg_premium') {
-                    return `$${(value / 1000).toFixed(0)}k`
-                  }
-                  return value.toLocaleString()
-                }} />
+                <YAxis 
+                  tickFormatter={(value) => {
+                    if (metricType === 'premium' || metricType === 'commission' || metricType === 'avg_premium') {
+                      return `$${(value / 1000).toFixed(0)}k`
+                    }
+                    return value.toLocaleString()
+                  }}
+                  stroke="#94a3b8"
+                  tick={{ fill: '#cbd5e1' }}
+                />
+                <CartesianGrid strokeDasharray="3 3" stroke="#1e3a8a" strokeOpacity={0.2} />
                 <Tooltip 
                   formatter={(value, name) => {
                     if (name === 'value') {
@@ -102,14 +108,15 @@ const InforceByLineView = ({ data, metricType }) => {
                     }
                     return value
                   }}
-                  labelStyle={{ color: 'var(--text-primary)' }}
+                  labelStyle={{ color: '#60a5fa' }}
                   contentStyle={{ 
-                    backgroundColor: 'var(--bg-primary)', 
-                    border: '1px solid var(--border-color)',
-                    borderRadius: '6px'
+                    backgroundColor: '#0f172a', 
+                    border: '1px solid #1e3a8a',
+                    borderRadius: '8px',
+                    color: '#e2e8f0'
                   }}
                 />
-                <Legend />
+                <Legend wrapperStyle={{ color: '#cbd5e1' }} />
                 <Bar 
                   dataKey="value" 
                   name={metricType === 'policy_count' ? 'Policy Count' : 
@@ -119,7 +126,7 @@ const InforceByLineView = ({ data, metricType }) => {
                   radius={[8, 8, 0, 0]}
                 >
                   {data.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={INSURANCE_COLORS[index % INSURANCE_COLORS.length]} />
+                    <Cell key={`cell-${index}`} fill={NAVY_COLORS[index % NAVY_COLORS.length]} />
                   ))}
                 </Bar>
               </BarChart>
@@ -139,7 +146,7 @@ const InforceByLineView = ({ data, metricType }) => {
                     overflow: 'hidden'
                   }}>
                     <thead>
-                      <tr style={{ backgroundColor: 'var(--color-primary)', color: '#fff' }}>
+                      <tr style={{ backgroundColor: '#1e3a8a', color: '#fff' }}>
                         <th style={{ padding: '12px', textAlign: 'left', border: '1px solid var(--border-color)' }}>Line</th>
                         <th style={{ padding: '12px', textAlign: 'right', border: '1px solid var(--border-color)' }}>
                           {metricType === 'policy_count' ? 'Count' : metricType === 'premium' ? 'Premium' : 'Commission'}
@@ -153,7 +160,7 @@ const InforceByLineView = ({ data, metricType }) => {
                     <tbody>
                       {data.map((item, index) => (
                         <tr key={index} style={{ 
-                          backgroundColor: index % 2 === 0 ? 'var(--bg-secondary)' : 'var(--bg-primary)',
+                          backgroundColor: index % 2 === 0 ? 'var(--bg-tertiary)' : 'var(--bg-secondary)',
                           color: 'var(--text-primary)'
                         }}>
                           <td style={{ padding: '12px', border: '1px solid var(--border-color)' }}>{item.line}</td>
@@ -190,7 +197,7 @@ const InforceByLineView = ({ data, metricType }) => {
                     overflow: 'hidden'
                   }}>
                     <thead>
-                      <tr style={{ backgroundColor: 'var(--color-primary)', color: '#fff' }}>
+                      <tr style={{ backgroundColor: '#1e3a8a', color: '#fff' }}>
                         <th style={{ padding: '12px', textAlign: 'left', border: '1px solid var(--border-color)' }}>Line</th>
                         <th style={{ padding: '12px', textAlign: 'right', border: '1px solid var(--border-color)' }}>Average Premium</th>
                         <th style={{ padding: '12px', textAlign: 'right', border: '1px solid var(--border-color)' }}>Policy Count</th>
@@ -199,7 +206,7 @@ const InforceByLineView = ({ data, metricType }) => {
                     <tbody>
                       {data.map((item, index) => (
                         <tr key={index} style={{ 
-                          backgroundColor: index % 2 === 0 ? 'var(--bg-secondary)' : 'var(--bg-primary)',
+                          backgroundColor: index % 2 === 0 ? 'var(--bg-tertiary)' : 'var(--bg-secondary)',
                           color: 'var(--text-primary)'
                         }}>
                           <td style={{ padding: '12px', border: '1px solid var(--border-color)' }}>{item.line}</td>

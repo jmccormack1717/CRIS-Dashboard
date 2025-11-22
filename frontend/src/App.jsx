@@ -1,27 +1,27 @@
 import React from 'react'
-import { ThemeProvider } from './contexts/ThemeContext'
 import Dashboard from './components/Dashboard'
-import ThemeToggle from './components/ThemeToggle'
 import './App.css'
 
 function App() {
+  // Set navy theme on mount
+  React.useEffect(() => {
+    document.documentElement.setAttribute('data-theme', 'navy')
+  }, [])
+
   return (
-    <ThemeProvider>
-      <div className="App">
-        <header className="App-header">
-          <div className="header-content">
-            <div>
-              <h1>CRIS Dashboard</h1>
-              <p>Live Data Visualization</p>
-            </div>
-            <ThemeToggle />
+    <div className="App">
+      <header className="App-header">
+        <div className="header-content">
+          <div>
+            <h1>CRIS Dashboard</h1>
+            <p>Live Data Visualization</p>
           </div>
-        </header>
-        <main>
-          <Dashboard />
-        </main>
-      </div>
-    </ThemeProvider>
+        </div>
+      </header>
+      <main>
+        <Dashboard />
+      </main>
+    </div>
   )
 }
 
