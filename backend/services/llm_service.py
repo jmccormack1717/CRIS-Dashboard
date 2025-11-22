@@ -88,7 +88,52 @@ class LLMService:
         
         return all_time
     
-    def create_data_context(self, dashboard_state: Dict[str, Any], all_time_summary: Optional[Dict[str, Any]] = None) -> str:
+    def create_inforce_summary(self, raw_data: List[Dict[str, Any]], data_processor) -> Dict[str, Any]:
+        """
+        Create comprehensive inforce summary with all metric types by Line.
+        This provides the LLM with complete inforce data for analysis.
+        """
+        if not raw_data:
+            return {}
+        
+        # Filter for inforce policies
+        inforce_policies = data_processor.filter_inforce_policies(raw_data)
+        
+        if not inforce_policies:
+            return {
+                "total_inforce_policies": 0,
+                "metrics": {
+                    "policy_count": [],
+                    "premium": [],
+                    "commission": [],
+                    "avg_premium": []
+                }
+            }
+        
+        # Process all metric types
+        policy_count_data = data_processor.process_inforce_by_line(inforce_policies, "policy_count")
+        premium_data = data_processor.process_inforce_by_line(inforce_policies, "premium")
+        commission_data = data_processor.process_inforce_by_line(inforce_policies, "commission")
+        avg_premium_data = data_processor.process_inforce_by_line(inforce_policies, "avg_premium")
+        
+        # Calculate totals
+        total_inforce_policies = len(inforce_policies)
+        total_premium = sum(item.get("value", 0) for item in premium_data)
+        total_commission = sum(item.get("value", 0) for item in commission_data)
+        
+        return {
+            "total_inforce_policies": total_inforce_policies,
+            "total_premium": total_premium,
+            "total_commission": total_commission,
+            "metrics": {
+                "policy_count": policy_count_data,
+                "premium": premium_data,
+                "commission": commission_data,
+                "avg_premium": avg_premium_data
+            }
+        }
+    
+    def create_data_context(self, dashboard_state: Dict[str, Any], all_time_summary: Optional[Dict[str, Any]] = None, inforce_summary: Optional[Dict[str, Any]] = None) -> str:
         """
         Create a context string describing the current dashboard state and all-time data
         """
@@ -200,25 +245,101 @@ class LLMService:
         elif view_type == "inforce-by-line":
             metric_type = dashboard_state.get("metric_type", "policy_count")
             context_parts.append(f"Metric Type: {metric_type}")
+            context_parts.append("Note: Inforce policies are those currently active (TODAY is between effective date and expiration date)")
             
+            # Include comprehensive inforce summary if available
+            if inforce_summary:
+                context_parts.append("")
+                context_parts.append("=== COMPLETE INFORCE DATA SUMMARY ===")
+                context_parts.append(f"Total Inforce Policies: {inforce_summary.get('total_inforce_policies', 0):,}")
+                total_premium = inforce_summary.get('total_premium', 0)
+                total_commission = inforce_summary.get('total_commission', 0)
+                context_parts.append(f"Total Premium (Inforce): ${total_premium:,.6f} (raw value, no rounding)")
+                context_parts.append(f"Total Commission (Inforce): ${total_commission:,.6f} (raw value, no rounding)")
+                context_parts.append("")
+                
+                # Include all metric types breakdowns
+                context_parts.append("=== INFORCE METRICS BY LINE (STRUCTURED JSON) ===")
+                context_parts.append("ALL inforce data is provided in JSON format for accurate analysis.")
+                context_parts.append("")
+                
+                metrics = inforce_summary.get("metrics", {})
+                
+                # Policy Count by Line
+                policy_count_data = metrics.get("policy_count", [])
+                if policy_count_data:
+                    context_parts.append("Policy Count (Inforce) by Line:")
+                    policy_count_json = {item.get("line", "Unknown"): {
+                        "count": item.get("value", 0),
+                        "percent": item.get("percent", 0)
+                    } for item in policy_count_data}
+                    context_parts.append(json.dumps(policy_count_json, indent=2, ensure_ascii=False))
+                    context_parts.append("")
+                
+                # Premium by Line
+                premium_data = metrics.get("premium", [])
+                if premium_data:
+                    context_parts.append("Premium (Inforce) by Line:")
+                    premium_json = {item.get("line", "Unknown"): {
+                        "premium": item.get("value", 0),  # Raw float, no rounding
+                        "percent": item.get("percent", 0),
+                        "count": item.get("count", 0)
+                    } for item in premium_data}
+                    context_parts.append(json.dumps(premium_json, indent=2, ensure_ascii=False))
+                    context_parts.append("")
+                
+                # Commission by Line
+                commission_data = metrics.get("commission", [])
+                if commission_data:
+                    context_parts.append("Commission (Inforce) by Line:")
+                    commission_json = {item.get("line", "Unknown"): {
+                        "commission": item.get("value", 0),  # Raw float, no rounding
+                        "percent": item.get("percent", 0),
+                        "count": item.get("count", 0)
+                    } for item in commission_data}
+                    context_parts.append(json.dumps(commission_json, indent=2, ensure_ascii=False))
+                    context_parts.append("")
+                
+                # Average Premium by Line
+                avg_premium_data = metrics.get("avg_premium", [])
+                if avg_premium_data:
+                    context_parts.append("Average Premium (Inforce) by Line:")
+                    avg_premium_json = {item.get("line", "Unknown"): {
+                        "avg_premium": item.get("value", 0),  # Raw float, no rounding
+                        "count": item.get("count", 0)
+                    } for item in avg_premium_data}
+                    context_parts.append(json.dumps(avg_premium_json, indent=2, ensure_ascii=False))
+                    context_parts.append("")
+                
+                context_parts.append("CRITICAL: This inforce data uses the EXACT same calculations as the dashboard.")
+                context_parts.append("NO ROUNDING: All values are raw floats - no rounding applied anywhere.")
+                context_parts.append("Round all dollar amounts to the nearest dollar (NO CENTS) when presenting to users.")
+                context_parts.append("")
+            
+            # Current view data (what's currently displayed)
             data = dashboard_state.get("data", [])
             if data:
                 total_value = sum(item.get("value", 0) for item in data)
                 total_count = sum(item.get("count", 0) for item in data)
                 
-                context_parts.append(f"\nCurrent View Summary:")
+                context_parts.append(f"\nCurrent View Summary (Currently Displayed):")
+                context_parts.append(f"- Metric Type: {metric_type}")
                 context_parts.append(f"- Total Lines: {len(data)}")
-                context_parts.append(f"- Total Value: {total_value:,.2f}")
+                context_parts.append(f"- Total Value: {total_value:,.6f} (raw value, no rounding)")
                 context_parts.append(f"- Total Policies (inforce): {total_count}")
                 
-                # Show top lines
+                # Show all lines in current view
                 sorted_data = sorted(data, key=lambda x: x.get("value", 0), reverse=True)
-                context_parts.append(f"\nTop Lines (by value):")
-                for item in sorted_data[:5]:
+                context_parts.append(f"\nAll Lines (by value, descending):")
+                for item in sorted_data:
                     line = item.get("line", "Unknown")
                     value = item.get("value", 0)
-                    percent = item.get("percent", 0)
-                    context_parts.append(f"  {line}: {value:,.2f} ({percent}%)")
+                    percent = item.get("percent", 0) if item.get("percent") is not None else 0
+                    count = item.get("count", 0) if item.get("count") is not None else 0
+                    if metric_type == "avg_premium":
+                        context_parts.append(f"  {line}: ${value:,.6f} (avg, {count} policies)")
+                    else:
+                        context_parts.append(f"  {line}: ${value:,.6f if metric_type in ['premium', 'commission'] else value:,.0f} ({percent:.2f}%, {count} policies)")
         
         return "\n".join(context_parts)
     
@@ -349,7 +470,8 @@ class LLMService:
         question: str,
         dashboard_state: Dict[str, Any],
         conversation_history: List[Dict[str, str]] = None,
-        all_time_summary: Optional[Dict[str, Any]] = None
+        all_time_summary: Optional[Dict[str, Any]] = None,
+        inforce_summary: Optional[Dict[str, Any]] = None
     ) -> str:
         """
         Ask the LLM a question with context about the dashboard data
@@ -360,8 +482,8 @@ class LLMService:
         if conversation_history is None:
             conversation_history = []
         
-        # Create context about current dashboard state and all-time data
-        data_context = self.create_data_context(dashboard_state, all_time_summary)
+        # Create context about current dashboard state, all-time data, and inforce data
+        data_context = self.create_data_context(dashboard_state, all_time_summary, inforce_summary)
         
         # System prompt with enhanced reasoning structure
         system_prompt = """You are an advanced analytical assistant for an insurance dashboard. 
