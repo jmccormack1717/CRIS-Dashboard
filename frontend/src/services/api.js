@@ -62,3 +62,27 @@ export const fetchInforceByLine = async (metricType) => {
   }
 }
 
+export const askLLMQuestion = async (question, dashboardState, conversationHistory = []) => {
+  try {
+    const response = await api.post('/api/llm/chat', {
+      question: question,
+      dashboard_state: dashboardState,
+      conversation_history: conversationHistory
+    })
+    return response.data
+  } catch (error) {
+    console.error('LLM API Error:', error)
+    throw new Error(error.response?.data?.detail || 'Failed to get LLM response')
+  }
+}
+
+export const checkLLMStatus = async () => {
+  try {
+    const response = await api.get('/api/llm/status')
+    return response.data
+  } catch (error) {
+    console.error('LLM Status Error:', error)
+    return { available: false }
+  }
+}
+

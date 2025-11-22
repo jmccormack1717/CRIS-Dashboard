@@ -1,13 +1,14 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-from typing import Optional, List
+from typing import Optional, List, Dict, Any
 from datetime import datetime
 import os
 from dotenv import load_dotenv
 
 from services.quickbase_client import QuickBaseClient
 from services.data_processor import DataProcessor
+from services.llm_service import LLMService
 
 load_dotenv()
 
@@ -36,6 +37,7 @@ app.add_middleware(
 # Initialize clients
 quickbase_client = QuickBaseClient()
 data_processor = DataProcessor()
+llm_service = LLMService()
 
 class FilterRequest(BaseModel):
     measure: str  # policies, premium, commission
@@ -252,6 +254,55 @@ async def debug_process(filter: FilterRequest):
             "number_of_periods": filter.number_of_periods,
             "date_field_id": data_processor.date_field_id
         }
+    }
+
+class LLMChatRequest(BaseModel):
+    question: str
+    dashboard_state: Dict[str, Any]
+    conversation_history: Optional[List[Dict[str, str]]] = []
+
+@app.post("/api/llm/chat")
+async def llm_chat(request: LLMChatRequest):
+    """
+    Chat with LLM about dashboard data
+    """
+    print("\n" + "=" * 80)
+    print("DEBUG: API /api/llm/chat endpoint called")
+    print(f"  Question: {request.question}")
+    print(f"  Dashboard State: {list(request.dashboard_state.keys())}")
+    print(f"  Conversation History Length: {len(request.conversation_history)}")
+    print("=" * 80)
+    
+    try:
+        response = await llm_service.ask_question(
+            question=request.question,
+            dashboard_state=request.dashboard_state,
+            conversation_history=request.conversation_history
+        )
+        
+        print(f"\nDEBUG: LLM Response generated (length: {len(response)} chars)")
+        print("=" * 80)
+        
+        return {
+            "success": True,
+            "response": response
+        }
+    except Exception as e:
+        import traceback
+        error_trace = traceback.format_exc()
+        print(f"\nERROR in /api/llm/chat:")
+        print(f"  {str(e)}")
+        print(f"  Traceback:\n{error_trace}")
+        print("=" * 80)
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/llm/status")
+async def llm_status():
+    """
+    Check if LLM service is available
+    """
+    return {
+        "available": llm_service.is_available()
     }
 
 if __name__ == "__main__":

@@ -4,6 +4,7 @@ import ChartView from './ChartView'
 import InforceByLineView from './InforceByLineView'
 import { SkeletonChart, SkeletonFilters } from './SkeletonLoader'
 import LoadingBar from './LoadingBar'
+import LLMChat from './LLMChat'
 import { fetchVisualizationData, fetchInforceByLine } from '../services/api'
 import './Dashboard.css'
 
@@ -209,6 +210,19 @@ const Dashboard = () => {
           )}
         </div>
       )}
+      
+      {/* LLM Chat Assistant */}
+      <LLMChat 
+        dashboardState={{
+          view_type: viewType,
+          measure: filters.measure,
+          period: filters.period,
+          number_of_periods: filters.numberOfPeriods || 10,
+          metric_type: inforceMetric,
+          data: data,
+          chart_type: chartType
+        }}
+      />
     </div>
   )
 }
