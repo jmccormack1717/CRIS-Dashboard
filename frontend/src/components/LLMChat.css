@@ -53,6 +53,121 @@
   margin: 0 auto;
 }
 
+/* Expanded mode - larger sizes */
+.llm-chat-expanded .llm-chat-header {
+  padding: 24px 32px;
+}
+
+.llm-chat-expanded .llm-chat-title {
+  font-size: 22px;
+  gap: 12px;
+}
+
+.llm-chat-expanded .llm-chat-title span:first-child {
+  font-size: 24px;
+}
+
+.llm-chat-expanded .llm-chat-actions {
+  gap: 12px;
+}
+
+.llm-chat-expanded .llm-chat-clear,
+.llm-chat-expanded .llm-chat-expand,
+.llm-chat-expanded .llm-chat-minimize {
+  padding: 8px 18px;
+  font-size: 15px;
+  border-radius: 8px;
+}
+
+.llm-chat-expanded .llm-chat-expand svg {
+  width: 18px;
+  height: 18px;
+}
+
+.llm-chat-expanded .llm-chat-messages {
+  padding: 24px 32px;
+  gap: 20px;
+}
+
+.llm-chat-expanded .llm-chat-messages::-webkit-scrollbar {
+  width: 12px;
+}
+
+.llm-chat-expanded .llm-chat-welcome {
+  padding: 48px 32px;
+}
+
+.llm-chat-expanded .llm-chat-welcome p {
+  font-size: 18px;
+  margin: 12px 0;
+}
+
+.llm-chat-expanded .llm-chat-suggestions {
+  font-size: 15px;
+  margin-top: 24px;
+}
+
+.llm-chat-expanded .llm-chat-message {
+  max-width: 85%;
+  gap: 8px;
+}
+
+.llm-chat-expanded .llm-chat-message-content {
+  padding: 18px 24px;
+  font-size: 17px;
+  line-height: 1.6;
+  border-radius: 16px;
+}
+
+.llm-chat-expanded .llm-chat-message-content p {
+  margin-bottom: 8px;
+}
+
+.llm-chat-expanded .llm-chat-message-time {
+  font-size: 12px;
+  padding: 0 6px;
+}
+
+.llm-chat-expanded .llm-chat-loading {
+  padding: 18px 24px;
+  gap: 6px;
+}
+
+.llm-chat-expanded .llm-chat-loading span {
+  width: 10px;
+  height: 10px;
+}
+
+.llm-chat-expanded .llm-chat-input-container {
+  padding: 20px 32px;
+}
+
+.llm-chat-expanded .llm-chat-input-wrapper {
+  padding: 14px 18px;
+  gap: 12px;
+  border-radius: 16px;
+}
+
+.llm-chat-expanded .llm-chat-input {
+  font-size: 17px;
+  min-height: 32px;
+  max-height: 300px;
+  padding: 8px 0;
+  line-height: 1.6;
+}
+
+.llm-chat-expanded .llm-chat-send {
+  width: 44px;
+  height: 44px;
+  padding: 10px;
+  border-radius: 10px;
+}
+
+.llm-chat-expanded .llm-chat-send svg {
+  width: 22px;
+  height: 22px;
+}
+
 .llm-chat-header {
   display: flex;
   justify-content: space-between;

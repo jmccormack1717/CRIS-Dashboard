@@ -47,7 +47,8 @@ const CHART_COLORS = [
 const ChartView = ({ data, measure, period, chartType = 'bar' }) => {
   const formatValue = (value) => {
     if (measure === 'premium' || measure === 'commission') {
-      return `$${value.toLocaleString()}`
+      // Round to nearest dollar (no cents)
+      return `$${Math.round(value).toLocaleString()}`
     }
     return value.toLocaleString()
   }

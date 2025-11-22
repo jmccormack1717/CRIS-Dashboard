@@ -27,7 +27,8 @@ const NAVY_COLORS = [
 const InforceByLineView = ({ data, metricType }) => {
   const formatValue = (value) => {
     if (metricType === 'premium' || metricType === 'commission' || metricType === 'avg_premium') {
-      return `$${value.toLocaleString()}`
+      // Round to nearest dollar (no cents)
+      return `$${Math.round(value).toLocaleString()}`
     }
     return value.toLocaleString()
   }
