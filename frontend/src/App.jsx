@@ -1,18 +1,27 @@
-import React, { useState, useEffect } from 'react'
+import React from 'react'
+import { ThemeProvider } from './contexts/ThemeContext'
 import Dashboard from './components/Dashboard'
+import ThemeToggle from './components/ThemeToggle'
 import './App.css'
 
 function App() {
   return (
-    <div className="App">
-      <header className="App-header">
-        <h1>CRIS Dashboard</h1>
-        <p>Live Data Visualization</p>
-      </header>
-      <main>
-        <Dashboard />
-      </main>
-    </div>
+    <ThemeProvider>
+      <div className="App">
+        <header className="App-header">
+          <div className="header-content">
+            <div>
+              <h1>CRIS Dashboard</h1>
+              <p>Live Data Visualization</p>
+            </div>
+            <ThemeToggle />
+          </div>
+        </header>
+        <main>
+          <Dashboard />
+        </main>
+      </div>
+    </ThemeProvider>
   )
 }
 

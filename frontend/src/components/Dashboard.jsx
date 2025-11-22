@@ -18,6 +18,7 @@ const Dashboard = () => {
     numberOfPeriods: 10
   })
   
+  const [chartType, setChartType] = useState('bar') // 'bar', 'line', 'area', 'pie', 'stacked'
   const [inforceMetric, setInforceMetric] = useState('policy_count') // 'policy_count', 'premium', 'commission', 'avg_premium'
 
   const fetchData = async (currentFilters) => {
@@ -25,12 +26,11 @@ const Dashboard = () => {
     setError(null)
     
     try {
-      // Ensure numberOfPeriods defaults to 10
+      // Validate and default numberOfPeriods only when fetching
+      const numPeriods = parseInt(currentFilters.numberOfPeriods, 10)
       const filtersToUse = {
         ...currentFilters,
-        numberOfPeriods: currentFilters.numberOfPeriods && currentFilters.numberOfPeriods > 0 
-          ? currentFilters.numberOfPeriods 
-          : 10
+        numberOfPeriods: (!isNaN(numPeriods) && numPeriods > 0) ? numPeriods : 10
       }
       
       const response = await fetchVisualizationData(filtersToUse)
@@ -85,10 +85,8 @@ const Dashboard = () => {
     setFilters(prev => {
       const updated = { ...prev, ...newFilters }
       
-      // Ensure numberOfPeriods is always valid (default to 10)
-      if (!updated.numberOfPeriods || updated.numberOfPeriods <= 0) {
-        updated.numberOfPeriods = 10
-      }
+      // Only validate numberOfPeriods on actual data fetch, not on every change
+      // This allows for easier editing in the text input
       
       return updated
     })
@@ -106,27 +104,14 @@ const Dashboard = () => {
   return (
     <div className="dashboard">
       {/* View Type Selector */}
-      <div className="view-selector" style={{ 
-        marginBottom: '1rem', 
-        padding: '1rem',
-        backgroundColor: '#f5f5f5',
-        borderRadius: '8px',
-        display: 'flex',
-        gap: '1rem',
-        alignItems: 'center'
-      }}>
-        <label style={{ fontWeight: 'bold', color: '#333' }}>View Type:</label>
+      <div className="view-selector">
+        <label>View Type:</label>
         <button
           onClick={() => handleViewTypeChange('time-based')}
           style={{
-            padding: '0.5rem 1rem',
-            borderRadius: '4px',
-            border: '2px solid',
-            backgroundColor: viewType === 'time-based' ? '#667eea' : '#fff',
-            color: viewType === 'time-based' ? '#fff' : '#333',
-            borderColor: '#667eea',
-            cursor: 'pointer',
-            fontWeight: 'bold'
+            backgroundColor: viewType === 'time-based' ? 'var(--color-primary)' : 'transparent',
+            color: viewType === 'time-based' ? 'white' : 'var(--text-primary)',
+            borderColor: 'var(--color-primary)'
           }}
         >
           Time-Based Metrics
@@ -134,14 +119,9 @@ const Dashboard = () => {
         <button
           onClick={() => handleViewTypeChange('inforce-by-line')}
           style={{
-            padding: '0.5rem 1rem',
-            borderRadius: '4px',
-            border: '2px solid',
-            backgroundColor: viewType === 'inforce-by-line' ? '#667eea' : '#fff',
-            color: viewType === 'inforce-by-line' ? '#fff' : '#333',
-            borderColor: '#667eea',
-            cursor: 'pointer',
-            fontWeight: 'bold'
+            backgroundColor: viewType === 'inforce-by-line' ? 'var(--color-primary)' : 'transparent',
+            color: viewType === 'inforce-by-line' ? 'white' : 'var(--text-primary)',
+            borderColor: 'var(--color-primary)'
           }}
         >
           Inforce Metrics by Line
@@ -153,6 +133,8 @@ const Dashboard = () => {
           <Filters 
             filters={filters} 
             onFilterChange={handleFilterChange}
+            chartType={chartType}
+            onChartTypeChange={setChartType}
           />
           
           {loading && (
@@ -174,6 +156,7 @@ const Dashboard = () => {
               data={data} 
               measure={filters.measure}
               period={filters.period}
+              chartType={chartType}
             />
           )}
         </>

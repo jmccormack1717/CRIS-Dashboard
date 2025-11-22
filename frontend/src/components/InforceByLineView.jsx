@@ -12,7 +12,17 @@ import {
 } from 'recharts'
 import './ChartView.css'
 
-const COLORS = ['#667eea', '#764ba2', '#f093fb', '#4facfe', '#43e97b', '#fa709a', '#fee140', '#30cfd0']
+// Insurance-themed colors
+const INSURANCE_COLORS = [
+  '#2563eb',  // Blue
+  '#0d9488',  // Teal
+  '#6366f1',  // Indigo
+  '#475569',  // Slate
+  '#0891b2',  // Cyan
+  '#1e40af',  // Navy
+  '#0284c7',  // Sky
+  '#059669'   // Green
+]
 
 const InforceByLineView = ({ data, metricType }) => {
   const formatValue = (value) => {
@@ -92,8 +102,12 @@ const InforceByLineView = ({ data, metricType }) => {
                     }
                     return value
                   }}
-                  labelStyle={{ color: '#333' }}
-                  contentStyle={{ backgroundColor: '#fff', border: '1px solid #ccc' }}
+                  labelStyle={{ color: 'var(--text-primary)' }}
+                  contentStyle={{ 
+                    backgroundColor: 'var(--bg-primary)', 
+                    border: '1px solid var(--border-color)',
+                    borderRadius: '6px'
+                  }}
                 />
                 <Legend />
                 <Bar 
@@ -105,7 +119,7 @@ const InforceByLineView = ({ data, metricType }) => {
                   radius={[8, 8, 0, 0]}
                 >
                   {data.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                    <Cell key={`cell-${index}`} fill={INSURANCE_COLORS[index % INSURANCE_COLORS.length]} />
                   ))}
                 </Bar>
               </BarChart>
@@ -114,38 +128,43 @@ const InforceByLineView = ({ data, metricType }) => {
             {/* Table with Count and Percent (for non-avg_premium metrics) */}
             {metricType !== 'avg_premium' && (
               <div style={{ marginTop: '2rem' }}>
-                <h3 style={{ marginBottom: '1rem', color: '#333' }}>Details</h3>
+                <h3 style={{ marginBottom: '1rem', color: 'var(--text-primary)' }}>Details</h3>
                 <div style={{ overflowX: 'auto' }}>
                   <table style={{ 
                     width: '100%', 
                     borderCollapse: 'collapse',
-                    backgroundColor: '#fff',
-                    boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+                    backgroundColor: 'var(--bg-primary)',
+                    boxShadow: '0 2px 8px var(--shadow)',
+                    borderRadius: '8px',
+                    overflow: 'hidden'
                   }}>
                     <thead>
-                      <tr style={{ backgroundColor: '#667eea', color: '#fff' }}>
-                        <th style={{ padding: '12px', textAlign: 'left', border: '1px solid #ddd' }}>Line</th>
-                        <th style={{ padding: '12px', textAlign: 'right', border: '1px solid #ddd' }}>
+                      <tr style={{ backgroundColor: 'var(--color-primary)', color: '#fff' }}>
+                        <th style={{ padding: '12px', textAlign: 'left', border: '1px solid var(--border-color)' }}>Line</th>
+                        <th style={{ padding: '12px', textAlign: 'right', border: '1px solid var(--border-color)' }}>
                           {metricType === 'policy_count' ? 'Count' : metricType === 'premium' ? 'Premium' : 'Commission'}
                         </th>
-                        <th style={{ padding: '12px', textAlign: 'right', border: '1px solid #ddd' }}>Percent</th>
+                        <th style={{ padding: '12px', textAlign: 'right', border: '1px solid var(--border-color)' }}>Percent</th>
                         {metricType !== 'policy_count' && (
-                          <th style={{ padding: '12px', textAlign: 'right', border: '1px solid #ddd' }}>Policy Count</th>
+                          <th style={{ padding: '12px', textAlign: 'right', border: '1px solid var(--border-color)' }}>Policy Count</th>
                         )}
                       </tr>
                     </thead>
                     <tbody>
                       {data.map((item, index) => (
-                        <tr key={index} style={{ backgroundColor: index % 2 === 0 ? '#f9f9f9' : '#fff' }}>
-                          <td style={{ padding: '12px', border: '1px solid #ddd' }}>{item.line}</td>
-                          <td style={{ padding: '12px', textAlign: 'right', border: '1px solid #ddd' }}>
+                        <tr key={index} style={{ 
+                          backgroundColor: index % 2 === 0 ? 'var(--bg-secondary)' : 'var(--bg-primary)',
+                          color: 'var(--text-primary)'
+                        }}>
+                          <td style={{ padding: '12px', border: '1px solid var(--border-color)' }}>{item.line}</td>
+                          <td style={{ padding: '12px', textAlign: 'right', border: '1px solid var(--border-color)' }}>
                             {formatValue(item.value)}
                           </td>
-                          <td style={{ padding: '12px', textAlign: 'right', border: '1px solid #ddd' }}>
+                          <td style={{ padding: '12px', textAlign: 'right', border: '1px solid var(--border-color)' }}>
                             {formatPercent(item.percent)}
                           </td>
                           {metricType !== 'policy_count' && (
-                            <td style={{ padding: '12px', textAlign: 'right', border: '1px solid #ddd' }}>
+                            <td style={{ padding: '12px', textAlign: 'right', border: '1px solid var(--border-color)' }}>
                               {item.count.toLocaleString()}
                             </td>
                           )}
@@ -160,29 +179,34 @@ const InforceByLineView = ({ data, metricType }) => {
             {/* For avg_premium, show table with average premium values */}
             {metricType === 'avg_premium' && (
               <div style={{ marginTop: '2rem' }}>
-                <h3 style={{ marginBottom: '1rem', color: '#333' }}>Average Premium by Line</h3>
+                <h3 style={{ marginBottom: '1rem', color: 'var(--text-primary)' }}>Average Premium by Line</h3>
                 <div style={{ overflowX: 'auto' }}>
                   <table style={{ 
                     width: '100%', 
                     borderCollapse: 'collapse',
-                    backgroundColor: '#fff',
-                    boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+                    backgroundColor: 'var(--bg-primary)',
+                    boxShadow: '0 2px 8px var(--shadow)',
+                    borderRadius: '8px',
+                    overflow: 'hidden'
                   }}>
                     <thead>
-                      <tr style={{ backgroundColor: '#667eea', color: '#fff' }}>
-                        <th style={{ padding: '12px', textAlign: 'left', border: '1px solid #ddd' }}>Line</th>
-                        <th style={{ padding: '12px', textAlign: 'right', border: '1px solid #ddd' }}>Average Premium</th>
-                        <th style={{ padding: '12px', textAlign: 'right', border: '1px solid #ddd' }}>Policy Count</th>
+                      <tr style={{ backgroundColor: 'var(--color-primary)', color: '#fff' }}>
+                        <th style={{ padding: '12px', textAlign: 'left', border: '1px solid var(--border-color)' }}>Line</th>
+                        <th style={{ padding: '12px', textAlign: 'right', border: '1px solid var(--border-color)' }}>Average Premium</th>
+                        <th style={{ padding: '12px', textAlign: 'right', border: '1px solid var(--border-color)' }}>Policy Count</th>
                       </tr>
                     </thead>
                     <tbody>
                       {data.map((item, index) => (
-                        <tr key={index} style={{ backgroundColor: index % 2 === 0 ? '#f9f9f9' : '#fff' }}>
-                          <td style={{ padding: '12px', border: '1px solid #ddd' }}>{item.line}</td>
-                          <td style={{ padding: '12px', textAlign: 'right', border: '1px solid #ddd' }}>
+                        <tr key={index} style={{ 
+                          backgroundColor: index % 2 === 0 ? 'var(--bg-secondary)' : 'var(--bg-primary)',
+                          color: 'var(--text-primary)'
+                        }}>
+                          <td style={{ padding: '12px', border: '1px solid var(--border-color)' }}>{item.line}</td>
+                          <td style={{ padding: '12px', textAlign: 'right', border: '1px solid var(--border-color)' }}>
                             {formatValue(item.value)}
                           </td>
-                          <td style={{ padding: '12px', textAlign: 'right', border: '1px solid #ddd' }}>
+                          <td style={{ padding: '12px', textAlign: 'right', border: '1px solid var(--border-color)' }}>
                             {item.count.toLocaleString()}
                           </td>
                         </tr>

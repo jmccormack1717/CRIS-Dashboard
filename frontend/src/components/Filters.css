@@ -1,15 +1,17 @@
 .filters {
-  background: white;
-  border-radius: 8px;
+  background: var(--bg-primary);
+  border-radius: 12px;
   padding: 2rem;
   margin-bottom: 2rem;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 12px var(--shadow);
+  transition: background-color 0.3s ease, box-shadow 0.3s ease;
 }
 
 .filters-header h2 {
   margin-bottom: 1.5rem;
-  color: #333;
+  color: var(--text-primary);
   font-size: 1.5rem;
+  font-weight: 700;
 }
 
 .filters-grid {
@@ -26,7 +28,7 @@
 .filter-group label {
   font-weight: 600;
   margin-bottom: 0.5rem;
-  color: #555;
+  color: var(--text-primary);
 }
 
 .filter-group select,
@@ -34,12 +36,14 @@
 .filter-group input[type="date"],
 .filter-group input[type="number"] {
   padding: 0.75rem;
-  border: 2px solid #e0e0e0;
-  border-radius: 4px;
+  border: 2px solid var(--border-color);
+  border-radius: 6px;
   font-size: 1rem;
-  transition: border-color 0.3s;
+  transition: all 0.2s ease;
   width: 100%;
   box-sizing: border-box;
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
 }
 
 .filter-group select:focus,
@@ -47,12 +51,20 @@
 .filter-group input[type="date"]:focus,
 .filter-group input[type="number"]:focus {
   outline: none;
-  border-color: #667eea;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+.filter-group select:hover,
+.filter-group input[type="text"]:hover,
+.filter-group input[type="date"]:hover,
+.filter-group input[type="number"]:hover {
+  border-color: var(--color-primary-light);
 }
 
 .filter-group small {
   margin-top: 0.25rem;
-  color: #888;
+  color: var(--text-tertiary);
   font-size: 0.85rem;
 }
 

@@ -1,7 +1,7 @@
 import React from 'react'
 import './Filters.css'
 
-const Filters = ({ filters, onFilterChange }) => {
+const Filters = ({ filters, onFilterChange, chartType, onChartTypeChange }) => {
   const handleMeasureChange = (e) => {
     onFilterChange({ measure: e.target.value })
   }
@@ -9,25 +9,46 @@ const Filters = ({ filters, onFilterChange }) => {
   const handlePeriodChange = (e) => {
     onFilterChange({ period: e.target.value })
   }
+  
+  const handleChartTypeChange = (e) => {
+    if (onChartTypeChange) {
+      onChartTypeChange(e.target.value)
+    }
+  }
 
   const handleNumberOfPeriodsChange = (e) => {
     const value = e.target.value.trim()
     
-    // If empty, default to 10
+    // Allow empty input for easier editing
     if (value === '' || value === null || value === undefined) {
-      onFilterChange({ numberOfPeriods: 10 })
+      onFilterChange({ numberOfPeriods: '' })
       return
     }
     
     // Parse the value
     const parsed = parseInt(value, 10)
     
-    // If valid number and > 0, use it; otherwise default to 10
+    // If valid number and > 0, use it; otherwise pass the raw value to allow user to continue typing
     if (!isNaN(parsed) && parsed > 0) {
       onFilterChange({ numberOfPeriods: parsed })
+    } else if (value === '-') {
+      // Allow negative sign for easier editing
+      onFilterChange({ numberOfPeriods: value })
     } else {
-      // Invalid input, reset to 10
+      // Allow partial input but don't submit invalid values
+      onFilterChange({ numberOfPeriods: value })
+    }
+  }
+  
+  const handleNumberOfPeriodsBlur = (e) => {
+    const value = e.target.value.trim()
+    const parsed = parseInt(value, 10)
+    
+    // On blur, validate and set to 10 if invalid
+    if (value === '' || isNaN(parsed) || parsed <= 0) {
       onFilterChange({ numberOfPeriods: 10 })
+    } else {
+      onFilterChange({ numberOfPeriods: parsed })
     }
   }
 
@@ -68,21 +89,33 @@ const Filters = ({ filters, onFilterChange }) => {
           <label htmlFor="numberOfPeriods">Number of Periods</label>
           <input
             id="numberOfPeriods"
-            type="number"
-            min="1"
-            placeholder={`Default: 10 (latest 10 ${filters.period}s)`}
+            type="text"
+            placeholder="10"
             value={filters.numberOfPeriods ?? 10}
             onChange={handleNumberOfPeriodsChange}
-            onBlur={(e) => {
-              // On blur, ensure value is valid or reset to 10
-              const value = e.target.value.trim()
-              if (value === '' || isNaN(parseInt(value, 10)) || parseInt(value, 10) <= 0) {
-                onFilterChange({ numberOfPeriods: 10 })
-              }
-            }}
+            onBlur={handleNumberOfPeriodsBlur}
+            inputMode="numeric"
           />
           <small>Show latest N {filters.period}s (default: 10)</small>
         </div>
+        
+        {chartType !== undefined && (
+          <div className="filter-group">
+            <label htmlFor="chartType">Chart Type</label>
+            <select 
+              id="chartType" 
+              value={chartType} 
+              onChange={handleChartTypeChange}
+            >
+              <option value="bar">Bar Chart</option>
+              <option value="line">Line Chart</option>
+              <option value="area">Area Chart</option>
+              <option value="pie">Pie Chart</option>
+              <option value="stacked">Stacked Bar Chart</option>
+            </select>
+            <small>Visualization style</small>
+          </div>
+        )}
       </div>
     </div>
   )
