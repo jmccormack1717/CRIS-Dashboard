@@ -20,7 +20,7 @@ const Dashboard = () => {
     numberOfPeriods: 10
   })
   
-  const [chartType, setChartType] = useState('bar') // 'bar', 'line', 'area', 'pie', 'stacked'
+  const [chartType, setChartType] = useState('bar') // 'bar', 'line', 'area'
   const [inforceMetric, setInforceMetric] = useState('policy_count') // 'policy_count', 'premium', 'commission', 'avg_premium'
 
   const fetchData = async (currentFilters) => {

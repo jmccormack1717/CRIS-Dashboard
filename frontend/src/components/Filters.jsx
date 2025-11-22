@@ -110,8 +110,6 @@ const Filters = ({ filters, onFilterChange, chartType, onChartTypeChange }) => {
               <option value="bar">Bar Chart</option>
               <option value="line">Line Chart</option>
               <option value="area">Area Chart</option>
-              <option value="pie">Pie Chart</option>
-              <option value="stacked">Stacked Bar Chart</option>
             </select>
             <small>Visualization style</small>
           </div>

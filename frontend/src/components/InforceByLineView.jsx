@@ -121,11 +121,12 @@ const InforceByLineView = ({ data, metricType }) => {
                   labelStyle={{ color: 'var(--color-accent)' }}
                   contentStyle={{ 
                     backgroundColor: 'var(--bg-secondary)', 
-                    border: '1px solid var(--color-primary)',
+                    border: '1px solid var(--border-color)',
                     borderRadius: '8px',
                     color: 'var(--text-primary)',
                     backdropFilter: 'blur(10px)',
-                    WebkitBackdropFilter: 'blur(10px)'
+                    WebkitBackdropFilter: 'blur(10px)',
+                    boxShadow: '0 4px 12px var(--shadow)'
                   }}
                   cursor={false}
                 />

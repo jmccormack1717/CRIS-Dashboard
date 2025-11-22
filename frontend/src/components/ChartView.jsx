@@ -6,8 +6,6 @@ import {
   Bar,
   AreaChart,
   Area,
-  PieChart,
-  Pie,
   Cell,
   XAxis,
   YAxis,
@@ -91,16 +89,17 @@ const ChartView = ({ data, measure, period, chartType = 'bar' }) => {
               <Tooltip 
                 formatter={(value) => formatValue(value)}
                 contentStyle={{ 
-                  backgroundColor: '#0f172a', 
-                  border: '1px solid #1e3a8a', 
+                  backgroundColor: 'var(--bg-secondary)', 
+                  border: '1px solid var(--border-color)', 
                   borderRadius: '8px',
-                  color: '#e2e8f0'
+                  color: 'var(--text-primary)',
+                  boxShadow: '0 4px 12px var(--shadow)'
                 }}
-                labelStyle={{ color: '#60a5fa' }}
+                labelStyle={{ color: 'var(--color-accent)' }}
                 cursor={false}
               />
               <Legend 
-                wrapperStyle={{ color: '#cbd5e1' }}
+                wrapperStyle={{ color: 'var(--text-secondary)' }}
               />
               <Line 
                 type="monotone" 
@@ -142,16 +141,17 @@ const ChartView = ({ data, measure, period, chartType = 'bar' }) => {
               <Tooltip 
                 formatter={(value) => formatValue(value)}
                 contentStyle={{ 
-                  backgroundColor: '#0f172a', 
-                  border: '1px solid #1e3a8a', 
+                  backgroundColor: 'var(--bg-secondary)', 
+                  border: '1px solid var(--border-color)', 
                   borderRadius: '8px',
-                  color: '#e2e8f0'
+                  color: 'var(--text-primary)',
+                  boxShadow: '0 4px 12px var(--shadow)'
                 }}
-                labelStyle={{ color: '#60a5fa' }}
+                labelStyle={{ color: 'var(--color-accent)' }}
                 cursor={false}
               />
               <Legend 
-                wrapperStyle={{ color: '#cbd5e1' }}
+                wrapperStyle={{ color: 'var(--text-secondary)' }}
               />
               <Area 
                 type="monotone" 
@@ -161,91 +161,6 @@ const ChartView = ({ data, measure, period, chartType = 'bar' }) => {
                 name={measure.charAt(0).toUpperCase() + measure.slice(1)}
               />
             </AreaChart>
-          </ResponsiveContainer>
-        )
-        
-      case 'pie':
-        return (
-          <ResponsiveContainer width="100%" height={400}>
-            <PieChart>
-              <Pie
-                data={data}
-                cx="50%"
-                cy="50%"
-                labelLine={false}
-                label={({ label, percent }) => `${label}: ${(percent * 100).toFixed(0)}%`}
-                outerRadius={120}
-                fill="#8884d8"
-                dataKey="value"
-                nameKey="label"
-              >
-                {data.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={CHART_COLORS[index % CHART_COLORS.length]} />
-                ))}
-              </Pie>
-              <Tooltip 
-                formatter={(value) => formatValue(value)}
-                contentStyle={{ 
-                  backgroundColor: '#0f172a', 
-                  border: '1px solid #1e3a8a', 
-                  borderRadius: '8px',
-                  color: '#e2e8f0'
-                }}
-                labelStyle={{ color: '#60a5fa' }}
-                cursor={false}
-              />
-              <Legend 
-                wrapperStyle={{ color: '#cbd5e1' }}
-              />
-            </PieChart>
-          </ResponsiveContainer>
-        )
-        
-      case 'stacked':
-        // For stacked, we'll show the same data but with visual stacking effect
-        // In a real scenario, you might stack multiple measures
-        return (
-          <ResponsiveContainer width="100%" height={400}>
-            <BarChart {...commonProps} onMouseEnter={() => {}} onMouseLeave={() => {}}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#1e3a8a" strokeOpacity={0.2} />
-              <XAxis 
-                dataKey="label" 
-                angle={-45}
-                textAnchor="end"
-                height={100}
-                stroke="#94a3b8"
-                tick={{ fill: '#cbd5e1' }}
-              />
-              <YAxis 
-                tickFormatter={yAxisFormatter}
-                stroke="#94a3b8"
-                tick={{ fill: '#cbd5e1' }}
-              />
-              <Tooltip 
-                formatter={(value) => formatValue(value)}
-                contentStyle={{ 
-                  backgroundColor: '#0f172a', 
-                  border: '1px solid #1e3a8a', 
-                  borderRadius: '8px',
-                  color: '#e2e8f0'
-                }}
-                labelStyle={{ color: '#60a5fa' }}
-                cursor={false}
-              />
-              <Legend 
-                wrapperStyle={{ color: '#cbd5e1' }}
-              />
-              <Bar 
-                dataKey="value" 
-                stackId="a"
-                fill={NAVY_COLORS.secondary}
-                name={measure.charAt(0).toUpperCase() + measure.slice(1)}
-                radius={[8, 8, 0, 0]}
-                cursor="default"
-                activeBar={null}
-                isAnimationActive={false}
-              />
-            </BarChart>
           </ResponsiveContainer>
         )
         
@@ -271,16 +186,17 @@ const ChartView = ({ data, measure, period, chartType = 'bar' }) => {
               <Tooltip 
                 formatter={(value) => formatValue(value)}
                 contentStyle={{ 
-                  backgroundColor: '#0f172a', 
-                  border: '1px solid #1e3a8a', 
+                  backgroundColor: 'var(--bg-secondary)', 
+                  border: '1px solid var(--border-color)', 
                   borderRadius: '8px',
-                  color: '#e2e8f0'
+                  color: 'var(--text-primary)',
+                  boxShadow: '0 4px 12px var(--shadow)'
                 }}
-                labelStyle={{ color: '#60a5fa' }}
+                labelStyle={{ color: 'var(--color-accent)' }}
                 cursor={false}
               />
               <Legend 
-                wrapperStyle={{ color: '#cbd5e1' }}
+                wrapperStyle={{ color: 'var(--text-secondary)' }}
               />
               <Bar 
                 dataKey="value" 
