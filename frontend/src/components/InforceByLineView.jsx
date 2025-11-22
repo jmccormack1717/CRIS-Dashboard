@@ -2,16 +2,13 @@ import React, { useState } from 'react'
 import {
   BarChart,
   Bar,
-  PieChart,
-  Pie,
   XAxis,
   YAxis,
   CartesianGrid,
   Tooltip,
   Legend,
   ResponsiveContainer,
-  Cell,
-  LabelList
+  Cell
 } from 'recharts'
 import './ChartView.css'
 import './ChartHoverFix.css'
@@ -143,129 +140,79 @@ const InforceByLineView = ({ data, metricType }) => {
         <div className="chart-container">
           {data.length > 0 ? (
             <>
-              {/* Pie Chart for policy_count, premium, commission | Bar Chart for avg_premium */}
-              {metricType === 'avg_premium' ? (
-                // Bar Chart for Average Premium
-                <ResponsiveContainer width="100%" height={400}>
-                  <BarChart 
-                    data={data} 
-                    margin={{ top: 20, right: 30, left: 20, bottom: 100 }}
-                    onMouseEnter={() => {}}
-                    onMouseLeave={() => {}}
-                  >
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis 
-                      dataKey="line" 
-                      angle={-45}
-                      textAnchor="end"
-                      height={100}
-                      stroke="var(--text-tertiary)"
-                      tick={{ fill: 'var(--text-secondary)' }}
-                    />
-                    <YAxis 
-                      tickFormatter={(value) => {
+              {/* Bar Chart for all metric types */}
+              <ResponsiveContainer width="100%" height={400}>
+                <BarChart 
+                  data={data} 
+                  margin={{ top: 20, right: 30, left: 20, bottom: 100 }}
+                  onMouseEnter={() => {}}
+                  onMouseLeave={() => {}}
+                >
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis 
+                    dataKey="line" 
+                    angle={-45}
+                    textAnchor="end"
+                    height={100}
+                    stroke="var(--text-tertiary)"
+                    tick={{ fill: 'var(--text-secondary)' }}
+                  />
+                  <YAxis 
+                    tickFormatter={(value) => {
+                      if (metricType === 'premium' || metricType === 'commission' || metricType === 'avg_premium') {
                         return `$${(value / 1000).toFixed(0)}k`
-                      }}
-                      stroke="var(--text-tertiary)"
-                      tick={{ fill: 'var(--text-secondary)' }}
-                    />
-                    <CartesianGrid 
-                      strokeDasharray="3 3" 
-                      stroke="var(--color-primary)" 
-                      strokeOpacity={0.2} 
-                    />
-                    <Tooltip 
-                      formatter={(value, name) => {
-                        if (name === 'value') {
-                          return formatValue(value)
-                        }
-                        return value
-                      }}
-                      labelStyle={{ color: 'var(--color-accent)' }}
-                      contentStyle={{ 
-                        backgroundColor: 'var(--bg-secondary)', 
-                        border: '1px solid var(--border-color)',
-                        borderRadius: '8px',
-                        color: 'var(--text-primary)',
-                        backdropFilter: 'blur(10px)',
-                        WebkitBackdropFilter: 'blur(10px)',
-                        boxShadow: '0 4px 12px var(--shadow)'
-                      }}
-                      cursor={false}
-                    />
-                    <Legend 
-                      wrapperStyle={{ 
-                        color: 'var(--text-secondary)'
-                      }} 
-                    />
-                    <Bar 
-                      dataKey="value" 
-                      name="Average Premium"
-                      radius={[8, 8, 0, 0]}
-                      cursor="default"
-                      activeBar={null}
-                      isAnimationActive={false}
-                    >
-                      {data.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={NAVY_COLORS[index % NAVY_COLORS.length]} />
-                      ))}
-                    </Bar>
-                  </BarChart>
-                </ResponsiveContainer>
-              ) : (
-                // Pie Chart for Policy Count, Premium, Commission
-                <ResponsiveContainer width="100%" height={400}>
-                  <PieChart>
-                    <Pie
-                      data={data}
-                      cx="50%"
-                      cy="50%"
-                      labelLine={false}
-                      label={({ line, percent }) => `${line}: ${(percent * 100).toFixed(1)}%`}
-                      outerRadius={120}
-                      fill="#8884d8"
-                      dataKey="value"
-                      nameKey="line"
-                      cursor="default"
-                      isAnimationActive={false}
-                    >
-                      {data.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={NAVY_COLORS[index % NAVY_COLORS.length]} />
-                      ))}
-                    </Pie>
-                    <Tooltip 
-                      formatter={(value, name, props) => {
-                        const item = props.payload
-                        return [
-                          `${formatValue(value)} (${formatPercent(item.percent)})`,
-                          item.line
-                        ]
-                      }}
-                      contentStyle={{ 
-                        backgroundColor: 'var(--bg-secondary)', 
-                        border: '1px solid var(--border-color)',
-                        borderRadius: '8px',
-                        color: 'var(--text-primary)',
-                        backdropFilter: 'blur(10px)',
-                        WebkitBackdropFilter: 'blur(10px)',
-                        boxShadow: '0 4px 12px var(--shadow)'
-                      }}
-                      labelStyle={{ color: 'var(--color-accent)' }}
-                      cursor={false}
-                    />
-                    <Legend 
-                      formatter={(value, entry) => {
-                        const item = data.find(d => d.line === value)
-                        return item ? `${value}: ${formatValue(item.value)} (${formatPercent(item.percent)})` : value
-                      }}
-                      wrapperStyle={{ 
-                        color: 'var(--text-secondary)',
-                        paddingTop: '20px'
-                      }} 
-                    />
-                  </PieChart>
-                </ResponsiveContainer>
-              )}
+                      }
+                      return value.toLocaleString()
+                    }}
+                    stroke="var(--text-tertiary)"
+                    tick={{ fill: 'var(--text-secondary)' }}
+                  />
+                  <CartesianGrid 
+                    strokeDasharray="3 3" 
+                    stroke="var(--color-primary)" 
+                    strokeOpacity={0.2} 
+                  />
+                  <Tooltip 
+                    formatter={(value, name) => {
+                      if (name === 'value') {
+                        return formatValue(value)
+                      }
+                      return value
+                    }}
+                    labelStyle={{ color: 'var(--color-accent)' }}
+                    contentStyle={{ 
+                      backgroundColor: 'var(--bg-secondary)', 
+                      border: '1px solid var(--border-color)',
+                      borderRadius: '8px',
+                      color: 'var(--text-primary)',
+                      backdropFilter: 'blur(10px)',
+                      WebkitBackdropFilter: 'blur(10px)',
+                      boxShadow: '0 4px 12px var(--shadow)'
+                    }}
+                    cursor={false}
+                  />
+                  <Legend 
+                    wrapperStyle={{ 
+                      color: 'var(--text-secondary)'
+                    }} 
+                  />
+                  <Bar 
+                    dataKey="value" 
+                    name={metricType === 'policy_count' ? 'Policy Count' : 
+                          metricType === 'premium' ? 'Premium' :
+                          metricType === 'commission' ? 'Commission' :
+                          'Average Premium'}
+                    radius={[8, 8, 0, 0]}
+                    cursor="default"
+                    activeBar={null}
+                    isAnimationActive={false}
+                  >
+                    {data.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={NAVY_COLORS[index % NAVY_COLORS.length]} />
+                    ))}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
 
               {/* Optional Details Table */}
               <div className="inforce-table-toggle">
