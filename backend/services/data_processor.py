@@ -270,37 +270,8 @@ class DataProcessor:
         # Sort by period key
         sorted_keys = sorted(grouped_data.keys())
         
-        # Filter out periods with zero values (optional - can remove if you want to show zeros)
-        # Also filter out future periods beyond current date to avoid showing only future dates
-        now = datetime.now()
-        filtered_keys = []
-        
-        for key in sorted_keys:
-            # Skip if value is 0 (optional - comment out if you want to show zeros)
-            # if grouped_data[key] == 0:
-            #     continue
-            
-            # For month periods, check if the period is in the future
-            if period == "month":
-                try:
-                    period_date = datetime.strptime(key, "%Y-%m")
-                    # Only include periods up to current month
-                    if period_date.year > now.year or (period_date.year == now.year and period_date.month > now.month):
-                        print(f"  Skipping future period: {key}")
-                        continue
-                except:
-                    pass
-            elif period == "year":
-                try:
-                    period_year = int(key)
-                    # Only include years up to current year
-                    if period_year > now.year:
-                        print(f"  Skipping future year: {key}")
-                        continue
-                except:
-                    pass
-            
-            filtered_keys.append(key)
+        # Include all periods, including future ones
+        # (Previously filtered out future periods, but user wants to see all data)
         
         return [
             {
@@ -308,7 +279,7 @@ class DataProcessor:
                 "value": round(grouped_data[key], 2),
                 "label": self._format_period_label(key, period)
             }
-            for key in filtered_keys
+            for key in sorted_keys
         ]
     
     def _format_period_label(self, period_key: str, period: str) -> str:
