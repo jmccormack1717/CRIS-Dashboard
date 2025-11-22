@@ -44,9 +44,10 @@ const Filters = ({ filters, onFilterChange, chartType, onChartTypeChange, loadin
     const value = e.target.value.trim()
     const parsed = parseInt(value, 10)
     
-    // On blur, validate and set to 10 if invalid
+    // On blur, validate but don't auto-set to 10 - let user input determine when to fetch
     if (value === '' || isNaN(parsed) || parsed <= 0) {
-      onFilterChange({ numberOfPeriods: 10 })
+      // Keep empty/invalid value - don't trigger fetch
+      onFilterChange({ numberOfPeriods: value === '' ? '' : value })
     } else {
       onFilterChange({ numberOfPeriods: parsed })
     }
@@ -114,7 +115,6 @@ const Filters = ({ filters, onFilterChange, chartType, onChartTypeChange, loadin
               transition: 'opacity 0.2s ease'
             }}
           />
-          <small>Show latest N {filters.period}s (default: 10)</small>
         </div>
         
         {chartType !== undefined && (

@@ -88,11 +88,17 @@ const Dashboard = () => {
         return
       }
       
-      // Validate and default numberOfPeriods only when fetching
+      // Validate numberOfPeriods - should already be validated before fetchData is called
+      // But double-check here to be safe
       const numPeriods = parseInt(currentFilters.numberOfPeriods, 10)
+      if (!currentFilters.numberOfPeriods || currentFilters.numberOfPeriods === '' || isNaN(numPeriods) || numPeriods <= 0) {
+        console.log('[Dashboard] Invalid numberOfPeriods in fetchData, aborting')
+        setLoading(false)
+        return
+      }
       const filtersToUse = {
         ...currentFilters,
-        numberOfPeriods: (!isNaN(numPeriods) && numPeriods > 0) ? numPeriods : 10
+        numberOfPeriods: numPeriods
       }
       
       const response = await fetchVisualizationData(filtersToUse)
@@ -218,6 +224,13 @@ const Dashboard = () => {
       
       console.log('[Dashboard] Debounce timeout - calling API with viewType:', viewType)
       if (viewType === 'time-based') {
+        // Validate numberOfPeriods before fetching - don't fetch if empty or invalid
+        const numPeriods = parseInt(filters.numberOfPeriods, 10)
+        if (!filters.numberOfPeriods || filters.numberOfPeriods === '' || isNaN(numPeriods) || numPeriods <= 0) {
+          console.log('[Dashboard] numberOfPeriods is empty or invalid, skipping fetch')
+          setLoading(false)
+          return
+        }
         console.log('[Dashboard] Fetching time-based data...')
         fetchData(filters, currentRequestId)
       } else {
@@ -404,7 +417,7 @@ const Dashboard = () => {
                 Loading time-based metrics...
               </p>
               <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', marginTop: '0.5rem' }}>
-                Processing {filters.measure} data for {filters.numberOfPeriods || 10} {filters.period}(s)
+                Processing {filters.measure} data for {filters.numberOfPeriods || 10} {filters.period}s
               </p>
             </div>
           )}
