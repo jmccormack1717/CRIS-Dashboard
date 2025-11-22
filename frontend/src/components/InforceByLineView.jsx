@@ -40,6 +40,9 @@ const InforceByLineView = ({ data, metricType }) => {
   }
 
   const formatValue = (value) => {
+    if (value === null || value === undefined || isNaN(value)) {
+      return '0'
+    }
     if (metricType === 'premium' || metricType === 'commission' || metricType === 'avg_premium') {
       // Round to nearest dollar (no cents)
       return `$${Math.round(value).toLocaleString()}`
@@ -48,7 +51,10 @@ const InforceByLineView = ({ data, metricType }) => {
   }
 
   const formatPercent = (value) => {
-    return `${value.toFixed(2)}%`
+    if (value === null || value === undefined || isNaN(value)) {
+      return '0.00%'
+    }
+    return `${Number(value).toFixed(2)}%`
   }
 
   const getTitle = () => {
