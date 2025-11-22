@@ -1,0 +1,71 @@
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--bg-tertiary) 0%,
+    var(--bg-secondary) 50%,
+    var(--bg-tertiary) 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: 8px;
+}
+
+[data-theme="light"] .skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--bg-elevated) 0%,
+    var(--bg-tertiary) 50%,
+    var(--bg-elevated) 100%
+  );
+  background-size: 200% 100%;
+}
+
+@keyframes shimmer {
+  0% { 
+    background-position: -200% 0; 
+  }
+  100% { 
+    background-position: 200% 0; 
+  }
+}
+
+.skeleton-chart {
+  height: 400px;
+  width: 100%;
+  border-radius: 12px;
+}
+
+.skeleton-text {
+  height: 1.2rem;
+  width: 60%;
+  margin-bottom: 0.5rem;
+  border-radius: 4px;
+}
+
+.skeleton-title {
+  height: 2rem;
+  width: 40%;
+  margin-bottom: 1rem;
+  border-radius: 4px;
+}
+
+.skeleton-button {
+  height: 2.5rem;
+  width: 8rem;
+  border-radius: 6px;
+}
+
+.skeleton-card {
+  background: var(--bg-secondary);
+  border-radius: 12px;
+  padding: 2rem;
+  border: 1px solid var(--border-light);
+}
+
+.skeleton-filter {
+  height: 3rem;
+  width: 100%;
+  border-radius: 8px;
+  margin-bottom: 1rem;
+}
+

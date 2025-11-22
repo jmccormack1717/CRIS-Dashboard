@@ -5,13 +5,18 @@
 }
 
 .App-header {
-  background: linear-gradient(135deg, #0a1128 0%, #1e3a8a 50%, #0f172a 100%);
+  background: linear-gradient(135deg, var(--bg-primary) 0%, var(--color-primary) 50%, var(--bg-secondary) 100%);
   color: white;
   padding: 2rem;
   box-shadow: 0 4px 20px var(--shadow-lg);
   border-bottom: 1px solid var(--border-color);
   position: relative;
   overflow: hidden;
+}
+
+[data-theme="light"] .App-header {
+  background: linear-gradient(135deg, #ffffff 0%, #3b82f6 50%, #f8fafc 100%);
+  color: #0f172a;
 }
 
 .App-header::before {
@@ -25,11 +30,50 @@
   pointer-events: none;
 }
 
+[data-theme="light"] .App-header::before {
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.05) 0%, rgba(14, 165, 233, 0.02) 100%);
+}
+
+.App-header::after {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(
+    circle,
+    rgba(59, 130, 246, 0.1) 0%,
+    transparent 70%
+  );
+  animation: pulse 8s ease-in-out infinite;
+  pointer-events: none;
+}
+
+[data-theme="light"] .App-header::after {
+  background: radial-gradient(
+    circle,
+    rgba(59, 130, 246, 0.05) 0%,
+    transparent 70%
+  );
+}
+
+@keyframes pulse {
+  0%, 100% { 
+    transform: scale(1) rotate(0deg); 
+    opacity: 0.5; 
+  }
+  50% { 
+    transform: scale(1.2) rotate(180deg); 
+    opacity: 0.8; 
+  }
+}
+
 .header-content {
   max-width: 1400px;
   margin: 0 auto;
   display: flex;
-  justify-content: center;
+  justify-content: space-between;
   align-items: center;
   position: relative;
   z-index: 1;
@@ -50,6 +94,8 @@ main {
   max-width: 1400px;
   margin: 0 auto;
   padding: 2rem;
+  scroll-behavior: smooth;
+  scroll-padding-top: 2rem;
 }
 
 @media (max-width: 768px) {
@@ -61,6 +107,10 @@ main {
   
   .App-header h1 {
     font-size: 2rem;
+  }
+  
+  main {
+    padding: 1rem;
   }
 }
 

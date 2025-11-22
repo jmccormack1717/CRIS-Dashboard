@@ -2,6 +2,8 @@ import React, { useState, useEffect, useRef } from 'react'
 import Filters from './Filters'
 import ChartView from './ChartView'
 import InforceByLineView from './InforceByLineView'
+import { SkeletonChart, SkeletonFilters } from './SkeletonLoader'
+import LoadingBar from './LoadingBar'
 import { fetchVisualizationData, fetchInforceByLine } from '../services/api'
 import './Dashboard.css'
 
@@ -103,6 +105,7 @@ const Dashboard = () => {
 
   return (
     <div className="dashboard">
+      <LoadingBar loading={loading} />
       {/* View Type Selector */}
       <div className="view-selector">
         <label>View Type:</label>
@@ -129,7 +132,7 @@ const Dashboard = () => {
       </div>
 
       {viewType === 'time-based' ? (
-        <>
+        <div data-view-transition>
           <Filters 
             filters={filters} 
             onFilterChange={handleFilterChange}
@@ -138,10 +141,10 @@ const Dashboard = () => {
           />
           
           {loading && (
-            <div className="loading">
-              <div className="spinner"></div>
-              <p>Loading data...</p>
-            </div>
+            <>
+              <SkeletonFilters />
+              <SkeletonChart />
+            </>
           )}
           
           {error && (
@@ -159,9 +162,9 @@ const Dashboard = () => {
               chartType={chartType}
             />
           )}
-        </>
+        </div>
       ) : (
-        <>
+        <div data-view-transition>
           {/* Inforce Metric Selector */}
           <div className="filters" style={{ marginBottom: '1rem' }}>
             <div className="filters-header">
@@ -204,7 +207,7 @@ const Dashboard = () => {
               metricType={inforceMetric}
             />
           )}
-        </>
+        </div>
       )}
     </div>
   )

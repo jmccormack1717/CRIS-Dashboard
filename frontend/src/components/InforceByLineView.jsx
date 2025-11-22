@@ -55,7 +55,7 @@ const InforceByLineView = ({ data, metricType }) => {
   const totalCount = data.reduce((sum, item) => sum + (item.count || 0), 0)
 
   return (
-    <div className="chart-view">
+    <div className="chart-view" style={{ animation: 'fadeInUp 0.6s ease-out' }}>
       <div className="chart-header">
         <h2>{getTitle()}</h2>
         <div className="chart-summary">
@@ -87,8 +87,8 @@ const InforceByLineView = ({ data, metricType }) => {
                   angle={-45}
                   textAnchor="end"
                   height={100}
-                  stroke="#94a3b8"
-                  tick={{ fill: '#cbd5e1' }}
+                  stroke="var(--text-tertiary)"
+                  tick={{ fill: 'var(--text-secondary)' }}
                 />
                 <YAxis 
                   tickFormatter={(value) => {
@@ -97,10 +97,14 @@ const InforceByLineView = ({ data, metricType }) => {
                     }
                     return value.toLocaleString()
                   }}
-                  stroke="#94a3b8"
-                  tick={{ fill: '#cbd5e1' }}
+                  stroke="var(--text-tertiary)"
+                  tick={{ fill: 'var(--text-secondary)' }}
                 />
-                <CartesianGrid strokeDasharray="3 3" stroke="#1e3a8a" strokeOpacity={0.2} />
+                <CartesianGrid 
+                  strokeDasharray="3 3" 
+                  stroke="var(--color-primary)" 
+                  strokeOpacity={0.2} 
+                />
                 <Tooltip 
                   formatter={(value, name) => {
                     if (name === 'value') {
@@ -108,15 +112,21 @@ const InforceByLineView = ({ data, metricType }) => {
                     }
                     return value
                   }}
-                  labelStyle={{ color: '#60a5fa' }}
+                  labelStyle={{ color: 'var(--color-accent)' }}
                   contentStyle={{ 
-                    backgroundColor: '#0f172a', 
-                    border: '1px solid #1e3a8a',
+                    backgroundColor: 'var(--bg-secondary)', 
+                    border: '1px solid var(--color-primary)',
                     borderRadius: '8px',
-                    color: '#e2e8f0'
+                    color: 'var(--text-primary)',
+                    backdropFilter: 'blur(10px)',
+                    WebkitBackdropFilter: 'blur(10px)'
                   }}
                 />
-                <Legend wrapperStyle={{ color: '#cbd5e1' }} />
+                <Legend 
+                  wrapperStyle={{ 
+                    color: 'var(--text-secondary)'
+                  }} 
+                />
                 <Bar 
                   dataKey="value" 
                   name={metricType === 'policy_count' ? 'Policy Count' : 
@@ -146,7 +156,7 @@ const InforceByLineView = ({ data, metricType }) => {
                     overflow: 'hidden'
                   }}>
                     <thead>
-                      <tr style={{ backgroundColor: '#1e3a8a', color: '#fff' }}>
+                      <tr style={{ backgroundColor: 'var(--color-primary)', color: '#fff' }}>
                         <th style={{ padding: '12px', textAlign: 'left', border: '1px solid var(--border-color)' }}>Line</th>
                         <th style={{ padding: '12px', textAlign: 'right', border: '1px solid var(--border-color)' }}>
                           {metricType === 'policy_count' ? 'Count' : metricType === 'premium' ? 'Premium' : 'Commission'}
@@ -197,7 +207,7 @@ const InforceByLineView = ({ data, metricType }) => {
                     overflow: 'hidden'
                   }}>
                     <thead>
-                      <tr style={{ backgroundColor: '#1e3a8a', color: '#fff' }}>
+                      <tr style={{ backgroundColor: 'var(--color-primary)', color: '#fff' }}>
                         <th style={{ padding: '12px', textAlign: 'left', border: '1px solid var(--border-color)' }}>Line</th>
                         <th style={{ padding: '12px', textAlign: 'right', border: '1px solid var(--border-color)' }}>Average Premium</th>
                         <th style={{ padding: '12px', textAlign: 'right', border: '1px solid var(--border-color)' }}>Policy Count</th>
