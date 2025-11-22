@@ -7,7 +7,8 @@ from collections import defaultdict
 class LLMService:
     def __init__(self):
         self.api_key = os.getenv("OPENAI_API_KEY")
-        self.model = os.getenv("OPENAI_MODEL", "gpt-4o-mini")
+        # Use gpt-4o for better analytical capabilities (can fall back to gpt-4o-mini)
+        self.model = os.getenv("OPENAI_MODEL", "gpt-4o")
         self.client = None
         
         if self.api_key:
@@ -25,66 +26,65 @@ class LLMService:
     
     def create_all_time_summary(self, raw_data: List[Dict[str, Any]], date_field_id: str, premium_field_id: str, commission_field_id: str, data_processor) -> Dict[str, Any]:
         """
-        Create all-time summary statistics from raw data, including detailed breakdowns
+        Create all-time summary statistics from raw data using the SAME calculation methods as the graph.
+        This ensures 100% consistency between graph and LLM data.
         """
         if not raw_data:
             return {}
         
-        all_time = {
-            "total_policies": len(raw_data),
-            "total_premium": 0.0,
-            "total_commission": 0.0,
-            "date_range": {"earliest": None, "latest": None},
-            "breakdowns": {
-                "monthly": {"policies": {}, "premium": {}, "commission": {}},
-                "quarterly": {"policies": {}, "premium": {}, "commission": {}},
-                "yearly": {"policies": {}, "premium": {}, "commission": {}}
-            }
-        }
+        # Use the EXACT SAME calculation methods as the graph
+        # This ensures LLM sees the same data as what's displayed
+        quarterly_policies = data_processor._group_by_period(raw_data, "quarter", "policies")
+        quarterly_premium = data_processor._group_by_period(raw_data, "quarter", "premium")
+        quarterly_commission = data_processor._group_by_period(raw_data, "quarter", "commission")
         
+        yearly_policies = data_processor._group_by_period(raw_data, "year", "policies")
+        yearly_premium = data_processor._group_by_period(raw_data, "year", "premium")
+        yearly_commission = data_processor._group_by_period(raw_data, "year", "commission")
+        
+        monthly_policies = data_processor._group_by_period(raw_data, "month", "policies")
+        monthly_premium = data_processor._group_by_period(raw_data, "month", "premium")
+        monthly_commission = data_processor._group_by_period(raw_data, "month", "commission")
+        
+        # Calculate totals (sum all values to match graph calculations)
+        total_policies = len(raw_data)
+        # Sum from yearly data to match graph (yearly totals are most accurate)
+        total_premium = sum(premium for premium in yearly_premium.values())
+        total_commission = sum(commission for commission in yearly_commission.values())
+        
+        # Get date range
         dates = []
-        
-        # Process all records to get totals and breakdowns
         for record in raw_data:
-            # Get date
             date = data_processor._get_date_from_record(record)
             if date:
                 dates.append(date)
-            
-            # Get premium
-            premium = data_processor._get_measure_value(record, "premium")
-            all_time["total_premium"] += premium
-            
-            # Get commission
-            commission = data_processor._get_measure_value(record, "commission")
-            all_time["total_commission"] += commission
-            
-            # Get policy count (1 per record)
-            policy_count = data_processor._get_measure_value(record, "policies")
-            
-            if date:
-                # Add to monthly breakdown
-                month_key = date.strftime("%Y-%m")
-                all_time["breakdowns"]["monthly"]["policies"][month_key] = all_time["breakdowns"]["monthly"]["policies"].get(month_key, 0) + policy_count
-                all_time["breakdowns"]["monthly"]["premium"][month_key] = all_time["breakdowns"]["monthly"]["premium"].get(month_key, 0) + premium
-                all_time["breakdowns"]["monthly"]["commission"][month_key] = all_time["breakdowns"]["monthly"]["commission"].get(month_key, 0) + commission
-                
-                # Add to quarterly breakdown
-                quarter = (date.month - 1) // 3 + 1
-                quarter_key = f"{date.year}-Q{quarter}"
-                all_time["breakdowns"]["quarterly"]["policies"][quarter_key] = all_time["breakdowns"]["quarterly"]["policies"].get(quarter_key, 0) + policy_count
-                all_time["breakdowns"]["quarterly"]["premium"][quarter_key] = all_time["breakdowns"]["quarterly"]["premium"].get(quarter_key, 0) + premium
-                all_time["breakdowns"]["quarterly"]["commission"][quarter_key] = all_time["breakdowns"]["quarterly"]["commission"].get(quarter_key, 0) + commission
-                
-                # Add to yearly breakdown
-                year_key = str(date.year)
-                all_time["breakdowns"]["yearly"]["policies"][year_key] = all_time["breakdowns"]["yearly"]["policies"].get(year_key, 0) + policy_count
-                all_time["breakdowns"]["yearly"]["premium"][year_key] = all_time["breakdowns"]["yearly"]["premium"].get(year_key, 0) + premium
-                all_time["breakdowns"]["yearly"]["commission"][year_key] = all_time["breakdowns"]["yearly"]["commission"].get(year_key, 0) + commission
         
-        if dates:
-            all_time["date_range"]["earliest"] = min(dates).strftime("%Y-%m-%d")
-            all_time["date_range"]["latest"] = max(dates).strftime("%Y-%m-%d")
+        all_time = {
+            "total_policies": total_policies,
+            "total_premium": total_premium,
+            "total_commission": total_commission,
+            "date_range": {
+                "earliest": min(dates).strftime("%Y-%m-%d") if dates else None,
+                "latest": max(dates).strftime("%Y-%m-%d") if dates else None
+            },
+            "breakdowns": {
+                "monthly": {
+                    "policies": monthly_policies,
+                    "premium": monthly_premium,
+                    "commission": monthly_commission
+                },
+                "quarterly": {
+                    "policies": quarterly_policies,
+                    "premium": quarterly_premium,
+                    "commission": quarterly_commission
+                },
+                "yearly": {
+                    "policies": yearly_policies,
+                    "premium": yearly_premium,
+                    "commission": yearly_commission
+                }
+            }
+        }
         
         return all_time
     
@@ -106,67 +106,24 @@ class LLMService:
                 context_parts.append(f"Date Range: {date_range['earliest']} to {date_range['latest']}")
             
             context_parts.append("")
-            context_parts.append("=== DETAILED BREAKDOWNS ===")
-            context_parts.append("You have access to ALL historical data broken down by Month, Quarter, and Year.")
+            context_parts.append("=== COMPLETE HISTORICAL DATA (STRUCTURED JSON) ===")
+            context_parts.append("ALL data is provided in JSON format for accurate analysis. Use this data for calculations.")
             context_parts.append("")
             
-            # Add quarterly breakdown for policies
+            # Extract breakdowns
             quarterly_policies = all_time_summary.get('breakdowns', {}).get('quarterly', {}).get('policies', {})
-            if quarterly_policies:
-                context_parts.append("Quarterly Policy Count (All Time):")
-                sorted_quarters = sorted(quarterly_policies.items())
-                for quarter, count in sorted_quarters:
-                    context_parts.append(f"  {quarter}: {int(count):,}")
-                context_parts.append("")
-            
-            # Add yearly breakdown for policies
-            yearly_policies = all_time_summary.get('breakdowns', {}).get('yearly', {}).get('policies', {})
-            if yearly_policies:
-                context_parts.append("Yearly Policy Count (All Time):")
-                sorted_years = sorted(yearly_policies.items())
-                for year, count in sorted_years:
-                    context_parts.append(f"  {year}: {int(count):,}")
-                context_parts.append("")
-            
-            # Add quarterly premium breakdown
             quarterly_premium = all_time_summary.get('breakdowns', {}).get('quarterly', {}).get('premium', {})
-            if quarterly_premium:
-                context_parts.append("Quarterly Premium (All Time):")
-                sorted_quarters = sorted(quarterly_premium.items())
-                for quarter, premium in sorted_quarters:
-                    context_parts.append(f"  {quarter}: ${premium:,.2f}")
-                context_parts.append("")
-            
-            # Add yearly premium breakdown
-            yearly_premium = all_time_summary.get('breakdowns', {}).get('yearly', {}).get('premium', {})
-            if yearly_premium:
-                context_parts.append("Yearly Premium (All Time):")
-                sorted_years = sorted(yearly_premium.items())
-                for year, premium in sorted_years:
-                    context_parts.append(f"  {year}: ${premium:,.2f}")
-                context_parts.append("")
-            
-            # Add quarterly commission breakdown
             quarterly_commission = all_time_summary.get('breakdowns', {}).get('quarterly', {}).get('commission', {})
-            if quarterly_commission:
-                context_parts.append("Quarterly Commission (All Time):")
-                sorted_quarters = sorted(quarterly_commission.items())
-                for quarter, commission in sorted_quarters:
-                    context_parts.append(f"  {quarter}: ${commission:,.2f}")
-                context_parts.append("")
             
-            # Add yearly commission breakdown
+            yearly_policies = all_time_summary.get('breakdowns', {}).get('yearly', {}).get('policies', {})
+            yearly_premium = all_time_summary.get('breakdowns', {}).get('yearly', {}).get('premium', {})
             yearly_commission = all_time_summary.get('breakdowns', {}).get('yearly', {}).get('commission', {})
-            if yearly_commission:
-                context_parts.append("Yearly Commission (All Time):")
-                sorted_years = sorted(yearly_commission.items())
-                for year, commission in sorted_years:
-                    context_parts.append(f"  {year}: ${commission:,.2f}")
-                context_parts.append("")
             
-            # Add structured JSON data for easier parsing and analysis
-            context_parts.append("=== STRUCTURED DATA FOR ANALYSIS (JSON FORMAT) ===")
-            context_parts.append("Use this structured data for calculations, comparisons, and deep analysis:")
+            monthly_policies = all_time_summary.get('breakdowns', {}).get('monthly', {}).get('policies', {})
+            monthly_premium = all_time_summary.get('breakdowns', {}).get('monthly', {}).get('premium', {})
+            monthly_commission = all_time_summary.get('breakdowns', {}).get('monthly', {}).get('commission', {})
+            
+            # Provide structured data ONLY (no verbose text lists to avoid confusion)
             structured_data = {
                 "quarterly": {
                     "policies": quarterly_policies,
@@ -177,9 +134,17 @@ class LLMService:
                     "policies": yearly_policies,
                     "premium": yearly_premium,
                     "commission": yearly_commission
+                },
+                "monthly": {
+                    "policies": monthly_policies,
+                    "premium": monthly_premium,
+                    "commission": monthly_commission
                 }
             }
             context_parts.append(json.dumps(structured_data, indent=2))
+            context_parts.append("")
+            context_parts.append("IMPORTANT: This data uses the EXACT same calculations as the dashboard graph.")
+            context_parts.append("All quarterly and yearly totals match what's displayed in the dashboard.")
             context_parts.append("")
             
             # Add pre-calculated analytical insights
@@ -395,6 +360,8 @@ class LLMService:
         system_prompt = """You are an advanced analytical assistant for an insurance dashboard. 
 Your role is to perform DEEP DATA ANALYSIS that goes beyond simple reporting and provides actionable business insights.
 
+CRITICAL: You have access to ALL historical data in structured JSON format. This data uses the EXACT same calculations as the dashboard graph, so all numbers match perfectly.
+
 ANALYTICAL CAPABILITIES:
 1. **Comparative Analysis**: Compare periods, identify trends, calculate growth rates, percentiles
 2. **Pattern Recognition**: Identify seasonal patterns, cyclical trends, anomalies, correlations
@@ -404,35 +371,36 @@ ANALYTICAL CAPABILITIES:
 6. **Multi-dimensional Analysis**: Compare policies vs premium vs commission patterns, identify relationships
 7. **Contextual Insights**: Relate findings to business implications and actionable recommendations
 
-DATA ACCESS:
-- You have COMPLETE historical data broken down by Month, Quarter, and Year
-- Data includes: Policies (count), Premium ($), Commission ($) for ALL periods
-- You have both human-readable summaries AND structured JSON data for calculations
-- Pre-calculated insights show best/worst periods - USE THESE but also do your own analysis
+DATA FORMAT:
+- Data is provided in structured JSON format: quarterly, yearly, and monthly breakdowns
+- Each breakdown has: policies (count), premium ($), commission ($)
+- Example: quarterly.commission["2024-Q1"] = commission value for Q1 2024
+- This data is 100% accurate and matches the dashboard graph exactly
 
 ANALYSIS APPROACH:
-- When asked "What quarter do we historically do the best in?", analyze ALL quarters, find patterns, provide rankings
-- Calculate growth rates, compare year-over-year, identify trends
-- Look for seasonal patterns (e.g., Q4 always stronger, Q1 consistently weaker)
-- Provide rankings: "Top 3 quarters for commission are..."
-- Calculate statistics: averages, growth rates, percentiles
-- Explain WHY patterns might exist based on the data
+- When asked "What quarter do we historically do the best in?", parse the JSON data, find the highest values, rank all quarters
+- Use the structured JSON data for ALL calculations - it's more accurate than text
+- Calculate growth rates by comparing sequential periods in the JSON data
+- Identify patterns by analyzing all quarters (e.g., all Q4 values across years)
+- Provide rankings with specific numbers from the JSON data
+- Verify your calculations match the data exactly
 - Be analytical, not just descriptive - provide insights and recommendations
 
 RESPONSE STYLE:
 - Start with the direct answer to the question
-- Support with specific numbers and data points
+- Support with specific numbers from the JSON data
 - Provide rankings, comparisons, and trends
 - Include growth rates, percentages, and changes when relevant
 - Format numbers nicely (use commas, dollar signs where appropriate)
 - Be concise but comprehensive
+- VERIFY: Double-check your numbers against the JSON data before responding
 
 EXAMPLE QUESTIONS YOU CAN ANSWER:
-- "What quarter do we historically do the best in?" → Analyze all quarters, rank them, show top performers
-- "Compare Q1 performance across all years" → Year-over-year Q1 comparison with trends
-- "Is there a seasonal pattern?" → Analyze quarterly patterns across years
-- "What's our growth rate?" → Calculate and explain growth trends
-- "Which year had the best performance?" → Multi-metric analysis (policies, premium, commission)"""
+- "What quarter do we historically do the best in?" → Parse quarterly.commission JSON, find max value, rank all quarters
+- "Compare Q1 performance across all years" → Extract all Q1 quarters from yearly data, compare, identify trends
+- "Is there a seasonal pattern?" → Analyze quarterly averages across years from the JSON data
+- "What's our growth rate?" → Calculate year-over-year changes from yearly JSON data
+- "Which year had the best performance?" → Compare all years across multiple metrics in the JSON data"""
         
         # Build messages
         messages = [
