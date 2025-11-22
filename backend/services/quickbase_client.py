@@ -24,8 +24,8 @@ class QuickBaseClient:
         status_field = os.getenv("QUICKBASE_STATUS_FIELD", "23")
         status_value = os.getenv("QUICKBASE_STATUS_VALUE", "Bound")
         # New fields for inforce metrics by Line
-        expiration_date_field = os.getenv("QUICKBASE_EXPIRATION_DATE_FIELD", "11")
-        line_field = os.getenv("QUICKBASE_LINE_FIELD", "12")
+        expiration_date_field = os.getenv("QUICKBASE_EXPIRATION_DATE_FIELD", "15")  # Field 15 - Expiration Date
+        line_field = os.getenv("QUICKBASE_LINE_FIELD", "168")  # Field 168 - Line of Business
         
         # Parse comma-separated field IDs or single values
         def parse_field_id(field_str):
@@ -94,7 +94,7 @@ class QuickBaseClient:
                 
                 # Query: Each record is a policy
                 # Each policy has: Effective Date (field 10), Premium (field 13), Commission (field 19)
-                # For inforce: Also includes Expiration Date (field 11), Line (field 12)
+                # For inforce: Also includes Expiration Date (field 15), Line of Business (field 168)
                 # Policies measure = COUNT of records (no field needed)
                 # Where clause filters for 'Bound' policies only
                 query_payload = {

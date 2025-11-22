@@ -13,8 +13,8 @@ class DataProcessor:
         self.date_field_id = os.getenv("QUICKBASE_DATE_FIELD", "10")
         self.premium_field_id = str(os.getenv("QUICKBASE_PREMIUM_FIELD", "13"))
         self.commission_field_id = str(os.getenv("QUICKBASE_COMMISSION_FIELD", "19"))
-        self.expiration_date_field_id = str(os.getenv("QUICKBASE_EXPIRATION_DATE_FIELD", "11"))
-        self.line_field_id = str(os.getenv("QUICKBASE_LINE_FIELD", "12"))
+        self.expiration_date_field_id = str(os.getenv("QUICKBASE_EXPIRATION_DATE_FIELD", "15"))  # Field 15 - Expiration Date
+        self.line_field_id = str(os.getenv("QUICKBASE_LINE_FIELD", "168"))  # Field 168 - Line of Business
         
         # Measure fields mapping
         # Policies doesn't have a field ID - it's a count of records
